@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真实车辆碰撞模拟器 - 公式版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            text-shadow: 0 0 20px rgba(0, 150, 255, 0.5);
+        }
+
+        .simulation-area {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: linear-gradient(to bottom, #0a0a0a 0%, #1a1a1a 100%);
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+            max-width: 100%;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-panel h3 {
+            margin-bottom: 12px;
+            color: #00d4ff;
+            border-bottom: 2px solid #00d4ff;
+            padding-bottom: 8px;
+            font-size: 1em;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #ccc;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #00d4ff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .value-display {
+            background: rgba(0, 212, 255, 0.2);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #00d4ff;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px 16px;
+            border: 2px solid #00d4ff;
+            background: transparent;
+            color: #00d4ff;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+        }
+
+        .mode-btn:hover, .mode-btn.active {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #00d4ff;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
+        }
+
+        .btn-reset {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a5a);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-card h4 {
+            color: #888;
+            font-size: 0.75em;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        /* 公式面板样式 */
+        .formula-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.8;
+            display: none;
+        }
+
+        .formula-panel.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .formula-title {
+            color: #ffe66d;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+
+        .formula-line {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .formula-name {
+            color: #4ecdc4;
+            display: inline-block;
+            min-width: 120px;
+        }
+
+        .formula-math {
+            color: #fff;
+        }
+
+        .formula-value {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .formula-step {
+            margin-left: 20px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .formula-divider {
+            border-top: 1px solid #444;
+            margin: 10px 0;
+        }
+
+        .formula-highlight {
+            background: rgba(255, 230, 109, 0.1);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .collision-info {
+            background: rgba(255, 200, 0, 0.1);
+            border: 2px solid rgba(255, 200, 0, 0.5);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .collision-info.show {
+            display: block;
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .tooltip {
+            font-size: 0.75em;
+            color: #888;
+            margin-left: 5px;
+        }
+
+        .toggle-formula {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .toggle-formula:hover {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 真实车辆碰撞模拟器 (含公式推导)</h1>
+        
+        <div class="simulation-area">
+            <canvas id="simCanvas" width="1200" height="450"></canvas>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>车辆 A</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>车辆 B</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #888;"></div>
+                    <span>墙壁</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-panel">
+                <h3>🎮 碰撞模式</h3>
+                <div class="mode-selector">
+                    <button class="mode-btn active" onclick="setMode('car-car')">两车相撞</button>
+                    <button class="mode-btn" onclick="setMode('car-wall')">单车撞墙</button>
+                </div>
+                
+                <div id="car-car-controls">
+                    <div class="control-group">
+                        <label>车辆 A 速度 <span class="value-display" id="speed1Val">60</span> km/h</label>
+                        <input type="range" id="speed1" min="0" max="200" value="60">
+                    </div>
+                    <div class="control-group">
+                        <label>车辆 A 质量 <span class="value-display" id="mass1Val">1500</span> kg</label>
+                        <input type="range" id="mass1" min="500" max="5000" value="1500" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label>车辆 B 速度 <span class="value-display" id="speed2Val">60</span> km/h</label>
+                        <input type="range" id="speed2" min="0" max="200" value="60">
+                    </div>
+                    <div class="control-group">
+                        <label>车辆 B 质量 <span class="value-display" id="mass2Val">1500</span> kg</label>
+                        <input type="range" id="mass2" min="500" max="5000" value="1500" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label>弹性系数 e <span class="tooltip">(0=完全非弹性, 1=完全弹性)</span></label>
+                        <input type="range" id="elasticityCar" min="0" max="1" value="0.15" step="0.05">
+                        <label style="margin-top: 5px;"><span class="value-display" id="elasticityCarVal">0.15</span></label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enableRollover" checked>
+                        <label for="enableRollover" style="margin: 0;">启用翻车物理</label>
+                    </div>
+                </div>
+
+                <div id="car-wall-controls" style="display: none;">
+                    <div class="control-group">
+                        <label>车辆速度 <span class="value-display" id="speedWallVal">80</span> km/h</label>
+                        <input type="range" id="speedWall" min="0" max="200" value="80">
+                    </div>
+                    <div class="control-group">
+                        <label>车辆质量 <span class="value-display" id="massWallVal">1500</span> kg</label>
+                        <input type="range" id="massWall" min="500" max="5000" value="1500" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label>墙壁弹性系数 <span class="tooltip">(混凝土墙≈0.1-0.3)</span></label>
+                        <input type="range" id="elasticityWall" min="0" max="0.5" value="0.15" step="0.05">
+                        <label style="margin-top: 5px;"><span class="value-display" id="elasticityWallVal">0.15</span></label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enableRolloverWall" checked>
+                        <label for="enableRolloverWall" style="margin: 0;">启用翻车物理</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>📊 实时数据</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h4>相对速度</h4>
+                        <div class="stat-value" id="relSpeed">0</div>
+                        <small>km/h</small>
+                    </div>
+                    <div class="stat-card">
+                        <h4>冲击力</h4>
+                        <div class="stat-value" id="impactForce">0</div>
+                        <small>kN</small>
+                    </div>
+                    <div class="stat-card">
+                        <h4>能量损失</h4>
+                        <div class="stat-value" id="energyLoss">0</div>
+                        <small>kJ</small>
+                    </div>
+                    <div class="stat-card">
+                        <h4>总动能(前)</h4>
+                        <div class="stat-value" id="keBefore">0</div>
+                        <small>kJ</small>
+                    </div>
+                    <div class="stat-card">
+                        <h4>总动能(后)</h4>
+                        <div class="stat-value" id="keAfter">0</div>
+                        <small>kJ</small>
+                    </div>
+                </div>
+                
+                <div class="collision-info" id="collisionInfo">
+                    <strong>💥 碰撞分析</strong>
+                    <p id="collisionText" style="margin-top: 8px; font-size: 0.9em;">准备模拟...</p>
+                </div>
+                
+                <button class="toggle-formula" onclick="toggleFormula()">📐 显示/隐藏公式推导</button>
+                
+                <div class="formula-panel" id="formulaPanel">
+                    <div class="formula-title">🔬 碰撞过程公式推导</div>
+                    <div id="formulaContent">
+                        <p style="color: #888;">运行模拟后将显示详细计算过程...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-start" onclick="startSimulation()">▶ 开始模拟</button>
+            <button class="btn btn-reset" onclick="resetSimulation()">↺ 重置</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let mode = 'car-car';
+        let animationId = null;
+        let isRunning = false;
+        let hasCollided = false;
+        
+        // 物理参数
+        const PIXELS_PER_METER = 4;
+        const TIME_STEP = 1/60;
+        const GRAVITY = 9.8;
+        
+        // 游戏对象
+        let car1, car2, wall;
+        let particles = [];
+        let sparks = [];
+        let lastCollisionData = null;
+        
+        class Car {
+            constructor(x, y, width, height, mass, velocity, color, direction, name) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.mass = mass;
+                this.velocity = velocity;
+                this.color = color;
+                this.direction = direction;
+                this.name = name;
+                
+                this.vx = velocity;
+                this.vy = 0;
+                this.angle = 0;
+                this.angularVelocity = 0;
+                
+                this.crashed = false;
+                this.deformation = 0;
+                this.rollover = false;
+                this.grounded = false;
+            }
+            
+            update() {
+                if (!this.crashed) {
+                    this.x += this.vx * TIME_STEP * PIXELS_PER_METER;
+                } else {
+                    this.vx *= 0.999;
+                    this.vy *= 0.999;
+                    
+                    if (this.grounded) {
+                        this.vx *= 0.95;
+                        this.angularVelocity *= 0.95;
+                    }
+                    
+                    if (this.rollover || !this.onGround) {
+                        this.vy += GRAVITY * TIME_STEP * PIXELS_PER_METER * 0.5;
+                    }
+                    
+                    this.x += this.vx * TIME_STEP * PIXELS_PER_METER;
+                    this.y += this.vy * TIME_STEP * PIXELS_PER_METER;
+                    this.angle += this.angularVelocity * TIME_STEP;
+                    
+                    const groundY = mode === 'car-car' ? (this.name === 'A' ? 200 : 280) : 250;
+                    if (this.y + this.height > groundY) {
+                        this.y = groundY - this.height;
+                        this.vy = -this.vy * 0.3;
+                        this.vx *= 0.8;
+                        this.angularVelocity *= 0.7;
+                        this.grounded = true;
+                        
+                        if (Math.abs(this.vx) < 0.5 && Math.abs(this.vy) < 0.5) {
+                            this.vx = 0;
+                            this.vy = 0;
+                            this.angularVelocity = 0;
+                        }
+                    } else {
+                        this.grounded = false;
+                    }
+                    
+                    if (this.x < 0) {
+                        this.x = 0;
+                        this.vx = Math.abs(this.vx) * 0.3;
+                    }
+                    if (this.x > canvas.width - this.width) {
+                        this.x = canvas.width - this.width;
+                        this.vx = -Math.abs(this.vx) * 0.3;
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+                ctx.rotate(this.angle);
+                
+                const deformX = this.crashed ? this.deformation : 0;
+                
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(-this.width/2 + 5, this.height/2 + 5, this.width, 10);
+                
+                ctx.fillStyle = this.crashed ? this.darkenColor(this.color, 40) : this.color;
+                
+                if (this.direction === 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(-this.width/2 + deformX, -this.height/2);
+                    ctx.lineTo(this.width/2 - 10, -this.height/2);
+                    ctx.quadraticCurveTo(this.width/2, -this.height/2 + 5, this.width/2, 0);
+                    ctx.quadraticCurveTo(this.width/2, this.height/2 - 5, this.width/2 - 10, this.height/2);
+                    ctx.lineTo(-this.width/2 + deformX, this.height/2);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(this.width/2 - deformX, -this.height/2);
+                    ctx.lineTo(-this.width/2 + 10, -this.height/2);
+                    ctx.quadraticCurveTo(-this.width/2, -this.height/2 + 5, -this.width/2, 0);
+                    ctx.quadraticCurveTo(-this.width/2, this.height/2 - 5, -this.width/2 + 10, this.height/2);
+                    ctx.lineTo(this.width/2 - deformX, this.height/2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                if (this.crashed && this.deformation > 5) {
+                    ctx.fillStyle = '#333';
+                    ctx.beginPath();
+                    ctx.arc(this.direction === 1 ? this.width/2 - 10 : -this.width/2 + 10, 0, this.deformation/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.fillStyle = '#1a2a3a';
+                const windowX = this.direction === 1 ? this.width/2 - 30 : -this.width/2 + 10;
+                ctx.fillRect(windowX, -this.height/2 + 8, 20, this.height - 16);
+                
+                ctx.fillStyle = '#1a1a1a';
+                const wheelOffset = this.width/2 - 20;
+                this.drawWheel(-wheelOffset, this.height/2 - 5);
+                this.drawWheel(wheelOffset, this.height/2 - 5);
+                
+                if (!this.crashed || Math.abs(this.vx) > 1) {
+                    ctx.fillStyle = '#ffff99';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#ffff99';
+                    const lightX = this.direction === 1 ? this.width/2 - 5 : -this.width/2 + 2;
+                    ctx.fillRect(lightX, -8, 4, 16);
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.restore();
+                
+                if (!this.rollover || Math.abs(this.vx) > 1) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '11px Arial';
+                    ctx.textAlign = 'center';
+                    const speedKmh = Math.abs(this.vx * 3.6).toFixed(0);
+                    ctx.fillText(`${this.name}: ${speedKmh} km/h`, this.x + this.width/2, this.y - 15);
+                }
+            }
+            
+            drawWheel(x, y) {
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#444';
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#1a1a1a';
+            }
+            
+            darkenColor(color, percent) {
+                const num = parseInt(color.replace('#', ''), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = Math.max((num >> 16) - amt, 0);
+                const G = Math.max((num >> 8 & 0x00FF) - amt, 0);
+                const B = Math.max((num & 0x0000FF) - amt, 0);
+                return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+            }
+        }
+        
+        class Wall {
+            constructor(x) {
+                this.x = x;
+                this.width = 25;
+                this.height = 250;
+                this.y = 130;
+            }
+            
+            draw() {
+                ctx.fillStyle = '#444';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < this.height; i += 25) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y + i);
+                    ctx.lineTo(this.x + this.width, this.y + i);
+                    ctx.stroke();
+                    
+                    const offset = (i / 25) % 2 === 0 ? 0 : 12;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + offset, this.y + i);
+                    ctx.lineTo(this.x + offset, this.y + i + 25);
+                    ctx.stroke();
+                }
+                
+                ctx.fillStyle = '#ffcc00';
+                for (let i = 0; i < this.height; i += 60) {
+                    ctx.fillRect(this.x, this.y + i, this.width, 20);
+                }
+                
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(this.x + 5, this.y + this.height, this.width, 10);
+            }
+        }
+        
+        class Particle {
+            constructor(x, y, vx, vy, color, life, size) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.life = life;
+                this.maxLife = life;
+                this.size = size || Math.random() * 4 + 2;
+                this.gravity = 0.3;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.life--;
+                this.size *= 0.97;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life / this.maxLife;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        class Spark {
+            constructor(x, y, angle, speed) {
+                this.x = x;
+                this.y = y;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 20 + Math.random() * 20;
+                this.size = Math.random() * 3 + 1;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.95;
+                this.vy *= 0.95;
+                this.life--;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life / 40;
+                ctx.strokeStyle = '#ffaa00';
+                ctx.lineWidth = this.size;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.vx * 2, this.y - this.vy * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+        
+        function init() {
+            drawRoad();
+            
+            if (mode === 'car-car') {
+                const speed1Kmh = parseInt(document.getElementById('speed1').value);
+                const speed2Kmh = parseInt(document.getElementById('speed2').value);
+                const mass1 = parseInt(document.getElementById('mass1').value);
+                const mass2 = parseInt(document.getElementById('mass2').value);
+                
+                car1 = new Car(80, 180, 100, 45, mass1, speed1Kmh / 3.6, '#ff6b6b', 1, 'A');
+                car2 = new Car(1020, 260, 100, 45, mass2, -speed2Kmh / 3.6, '#4ecdc4', -1, 'B');
+                wall = null;
+            } else {
+                const speedKmh = parseInt(document.getElementById('speedWall').value);
+                const mass = parseInt(document.getElementById('massWall').value);
+                
+                car1 = new Car(80, 230, 100, 45, mass, speedKmh / 3.6, '#ff6b6b', 1, 'A');
+                car2 = null;
+                wall = new Wall(1050);
+            }
+            
+            particles = [];
+            sparks = [];
+            hasCollided = false;
+            lastCollisionData = null;
+            updateStats(0, 0, 0, 0, 0);
+            document.getElementById('collisionInfo').classList.remove('show');
+            document.getElementById('formulaPanel').classList.remove('show');
+            
+            draw();
+        }
+        
+        function drawRoad() {
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, 130);
+            skyGradient.addColorStop(0, '#1a1a3e');
+            skyGradient.addColorStop(1, '#2c3e50');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, canvas.width, 130);
+            
+            const roadGradient = ctx.createLinearGradient(0, 130, 0, canvas.height);
+            roadGradient.addColorStop(0, '#2c3e50');
+            roadGradient.addColorStop(0.1, '#34495e');
+            roadGradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = roadGradient;
+            ctx.fillRect(0, 130, canvas.width, canvas.height - 130);
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([30, 30]);
+            
+            if (mode === 'car-car') {
+                ctx.beginPath();
+                ctx.moveTo(0, 225);
+                ctx.lineTo(canvas.width, 225);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(0, 275);
+                ctx.lineTo(canvas.width, 275);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 140);
+            ctx.lineTo(canvas.width, 140);
+            ctx.stroke();
+        }
+        
+        function draw() {
+            drawRoad();
+            
+            if (wall) wall.draw();
+            if (car1) car1.draw();
+            if (car2) car2.draw();
+            
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            
+            sparks = sparks.filter(s => s.life > 0);
+            sparks.forEach(s => {
+                s.update();
+                s.draw();
+            });
+        }
+        
+        function calculateCarCarCollision() {
+            const elasticity = parseFloat(document.getElementById('elasticityCar').value);
+            const enableRollover = document.getElementById('enableRollover').checked;
+            
+            // 转换单位
+            const v1 = car1.vx;  // m/s
+            const v2 = car2.vx;
+            const m1 = car1.mass;  // kg
+            const m2 = car2.mass;
+            
+            // 相对速度 (用于显示)
+            const relVelocity = Math.abs(v1 - v2);
+            
+            // ====== 公式1: 动量守恒 ======
+            // m1*v1 + m2*v2 = m1*v1' + m2*v2'
+            const momentumBefore = m1 * v1 + m2 * v2;
+            
+            // ====== 公式2: 恢复系数 ======
+            // e = (v2' - v1') / (v1 - v2)
+            // 联立求解:
+            // v1' = [(m1 - e*m2)*v1 + (1+e)*m2*v2] / (m1 + m2)
+            // v2' = [(m2 - e*m1)*v2 + (1+e)*m1*v1] / (m1 + m2)
+            
+            const v1Final = ((m1 - elasticity * m2) * v1 + (1 + elasticity) * m2 * v2) / (m1 + m2);
+            const v2Final = ((m2 - elasticity * m1) * v2 + (1 + elasticity) * m1 * v1) / (m1 + m2);
+            
+            const momentumAfter = m1 * v1Final + m2 * v2Final;
+            
+            // ====== 公式3: 动能计算 ======
+            // Ek = 1/2 * m * v²
+            const keBefore = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2;
+            const keAfter = 0.5 * m1 * v1Final * v1Final + 0.5 * m2 * v2Final * v2Final;
+            
+            // ====== 公式4: 能量损失 ======
+            // ΔE = Ek(前) - Ek(后)
+            const energyLoss = Math.max(0, keBefore - keAfter);
+            
+            // ====== 公式5: 冲击力估算 ======
+            // F = Δp / Δt = m * Δv / Δt
+            // 假设碰撞时间 Δt = 0.1s (100ms)
+            const collisionTime = 0.1;  // s
+            const deltaV1 = Math.abs(v1Final - v1);
+            const deltaV2 = Math.abs(v2Final - v2);
+            const impulse1 = m1 * deltaV1;
+            const impulse2 = m2 * deltaV2;
+            const impactForce = (impulse1 + impulse2) / collisionTime / 1000;  // kN
+            
+            // 应用物理结果
+            car1.vx = v1Final;
+            car2.vx = v2Final;
+            car1.crashed = true;
+            car2.crashed = true;
+            
+            // 变形量 (与相对速度成正比)
+            const deformationFactor = Math.min(1, relVelocity / 30);
+            car1.deformation = deformationFactor * 40;
+            car2.deformation = deformationFactor * 40;
+            
+            // 翻车判定
+            const rolloverThreshold = 15; // m/s
+            let rolloverOccurred = false;
+            if (enableRollover && relVelocity > rolloverThreshold) {
+                const massDiff = Math.abs(m1 - m2) / Math.max(m1, m2);
+                if (massDiff > 0.3 || relVelocity > 25) {
+                    if (m1 < m2) {
+                        car1.rollover = true;
+                        car1.angularVelocity = -0.5 * relVelocity / 10;
+                        car1.vy = -relVelocity * 0.15;
+                        rolloverOccurred = true;
+                    } else if (m2 < m1) {
+                        car2.rollover = true;
+                        car2.angularVelocity = 0.5 * relVelocity / 10;
+                        car2.vy = -relVelocity * 0.15;
+                        rolloverOccurred = true;
+                    }
+                }
+            }
+            
+            // 特效
+            const collisionX = (car1.x + car1.width + car2.x) / 2;
+            const collisionY = (car1.y + car2.y) / 2 + 22;
+            createExplosion(collisionX, collisionY, impactForce, relVelocity);
+            
+            // 碰撞类型
+            const relSpeedKmh = relVelocity * 3.6;
+            let collisionType = '中等碰撞';
+            if (relSpeedKmh < 30) collisionType = '轻微擦碰';
+            else if (relSpeedKmh < 60) collisionType = '中等碰撞';
+            else if (relSpeedKmh < 100) collisionType = '严重碰撞';
+            else collisionType = '极度危险';
+            if (rolloverOccurred) collisionType += '+翻车';
+            
+            // 保存详细计算数据用于公式显示
+            lastCollisionData = {
+                mode: 'car-car',
+                m1, m2, v1, v2,
+                v1Final, v2Final,
+                elasticity,
+                keBefore, keAfter,
+                energyLoss,
+                impactForce,
+                collisionTime,
+                deltaV1, deltaV2,
+                impulse1, impulse2,
+                momentumBefore, momentumAfter,
+                relVelocity,
+                relSpeedKmh,
+                collisionType
+            };
+            
+            return { 
+                impactForce, 
+                energyLoss: energyLoss / 1000,
+                keBefore: keBefore / 1000,
+                keAfter: keAfter / 1000,
+                relSpeed: relSpeedKmh,
+                collisionType,
+                v1Final: v1Final * 3.6,
+                v2Final: v2Final * 3.6
+            };
+        }
+        
+        function calculateCarWallCollision() {
+            const elasticity = parseFloat(document.getElementById('elasticityWall').value);
+            const enableRollover = document.getElementById('enableRolloverWall').checked;
+            
+            const v = car1.vx;  // m/s (撞墙前)
+            const m = car1.mass;  // kg
+            
+            // 墙质量视为无穷大，速度为0
+            // ====== 公式: 恢复系数 ======
+            // e = -v' / v  (因为墙不动)
+            // v' = -e * v
+            const vFinal = -v * elasticity;
+            const deltaV = Math.abs(vFinal - v);  // 速度变化量
+            
+            // ====== 动能计算 ======
+            const keBefore = 0.5 * m * v * v;
+            const keAfter = 0.5 * m * vFinal * vFinal;
+            const energyLoss = keBefore - keAfter;
+            
+            // ====== 冲击力估算 ======
+            // F = m * Δv / Δt
+            const collisionTime = 0.08;  // s (撞墙时间更短)
+            const impactForce = m * deltaV / collisionTime / 1000;  // kN
+            
+            // 应用结果
+            car1.vx = vFinal * 0.8;  // 额外能量损失
+            car1.crashed = true;
+            
+            // 变形
+            const deformationFactor = Math.min(1, Math.abs(v) / 25);
+            car1.deformation = deformationFactor * 50;
+            
+            // 翻车判定
+            let rolloverOccurred = false;
+            const rolloverThreshold = 12; // m/s
+            if (enableRollover && Math.abs(v) > rolloverThreshold) {
+                const rolloverChance = (Math.abs(v) - rolloverThreshold) / 20;
+                if (Math.random() < rolloverChance || Math.abs(v) > 25) {
+                    car1.rollover = true;
+                    car1.angularVelocity = -0.3 * Math.abs(v) / 10 - 0.2;
+                    car1.vy = -Math.abs(v) * 0.2;
+                    rolloverOccurred = true;
+                }
+            }
+            
+            // 特效
+            const collisionX = wall.x - 10;
+            const collisionY = car1.y + 22;
+            createExplosion(collisionX, collisionY, impactForce, Math.abs(v));
+            
+            // 碰撞类型
+            const speedKmh = Math.abs(v) * 3.6;
+            let collisionType = '中等碰撞';
+            if (speedKmh < 30) collisionType = '轻微碰撞';
+            else if (speedKmh < 60) collisionType = '中等碰撞';
+            else if (speedKmh < 100) collisionType = '严重碰撞';
+            else collisionType = '极度危险';
+            if (rolloverOccurred) collisionType += '+翻车';
+            
+            // 保存详细计算数据
+            lastCollisionData = {
+                mode: 'car-wall',
+                m, v, vFinal,
+                elasticity,
+                keBefore, keAfter,
+                energyLoss,
+                impactForce,
+                collisionTime,
+                deltaV,
+                speedKmh,
+                collisionType
+            };
+            
+            return { 
+                impactForce, 
+                energyLoss: energyLoss / 1000,
+                keBefore: keBefore / 1000,
+                keAfter: keAfter / 1000,
+                relSpeed: speedKmh,
+                collisionType,
+                vFinal: vFinal * 3.6
+            };
+        }
+        
+        function generateFormulaHTML() {
+            if (!lastCollisionData) return '<p style="color: #888;">请先运行模拟...</p>';
+            
+            if (lastCollisionData.mode === 'car-car') {
+                const d = lastCollisionData;
+                return `
+<div class="formula-line">
+    <span class="formula-name">【输入数据】</span>
+</div>
+<div class="formula-step">车辆A: m₁ = ${d.m1} kg, v₁ = ${d.v1.toFixed(2)} m/s (${(d.v1*3.6).toFixed(0)} km/h)</div>
+<div class="formula-step">车辆B: m₂ = ${d.m2} kg, v₂ = ${d.v2.toFixed(2)} m/s (${(d.v2*3.6).toFixed(0)} km/h)</div>
+<div class="formula-step">弹性系数: e = ${d.elasticity}</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式1】动量守恒</span>
+</div>
+<div class="formula-math">m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'</div>
+<div class="formula-step">碰撞前动量: ${d.m1}×${d.v1.toFixed(2)} + ${d.m2}×${d.v2.toFixed(2)} = ${d.momentumBefore.toFixed(0)} kg·m/s</div>
+<div class="formula-step">碰撞后动量: ${d.m1}×${d.v1Final.toFixed(2)} + ${d.m2}×${d.v2Final.toFixed(2)} = ${d.momentumAfter.toFixed(0)} kg·m/s ✓</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式2】恢复系数</span>
+</div>
+<div class="formula-math">e = (v₂' - v₁') / (v₁ - v₂)</div>
+<div class="formula-step">联立求解得:</div>
+<div class="formula-step formula-highlight">v₁' = [(m₁-em₂)v₁ + (1+e)m₂v₂] / (m₁+m₂) = ${d.v1Final.toFixed(2)} m/s</div>
+<div class="formula-step formula-highlight">v₂' = [(m₂-em₁)v₂ + (1+e)m₁v₁] / (m₁+m₂) = ${d.v2Final.toFixed(2)} m/s</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式3】动能计算</span>
+</div>
+<div class="formula-math">Ek = ½mv²</div>
+<div class="formula-step">碰撞前: Ek₁ = ½×${d.m1}×${d.v1.toFixed(2)}² = ${(0.5*d.m1*d.v1*d.v1/1000).toFixed(1)} kJ</div>
+<div class="formula-step">碰撞前: Ek₂ = ½×${d.m2}×${d.v2.toFixed(2)}² = ${(0.5*d.m2*d.v2*d.v2/1000).toFixed(1)} kJ</div>
+<div class="formula-step">碰撞后: Ek₁' = ½×${d.m1}×${d.v1Final.toFixed(2)}² = ${(0.5*d.m1*d.v1Final*d.v1Final/1000).toFixed(1)} kJ</div>
+<div class="formula-step">碰撞后: Ek₂' = ½×${d.m2}×${d.v2Final.toFixed(2)}² = ${(0.5*d.m2*d.v2Final*d.v2Final/1000).toFixed(1)} kJ</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式4】能量损失</span>
+</div>
+<div class="formula-math">ΔE = Ek(前) - Ek(后)</div>
+<div class="formula-step">ΔE = ${(d.keBefore/1000).toFixed(1)} - ${(d.keAfter/1000).toFixed(1)} = ${(d.energyLoss/1000).toFixed(1)} kJ</div>
+<div class="formula-step">能量损失率: ${((d.energyLoss/d.keBefore)*100).toFixed(1)}%</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式5】冲击力估算</span>
+</div>
+<div class="formula-math">F = Δp/Δt = m·Δv/Δt</div>
+<div class="formula-step">假设碰撞时间 Δt = ${d.collisionTime*1000}ms</div>
+<div class="formula-step">车辆A: Δv₁ = |${d.v1Final.toFixed(2)} - ${d.v1.toFixed(2)}| = ${d.deltaV1.toFixed(2)} m/s</div>
+<div class="formula-step">冲量₁ = ${d.m1}×${d.deltaV1.toFixed(2)} = ${d.impulse1.toFixed(0)} N·s</div>
+<div class="formula-step">车辆B: Δv₂ = |${d.v2Final.toFixed(2)} - ${d.v2.toFixed(2)}| = ${d.deltaV2.toFixed(2)} m/s</div>
+<div class="formula-step">冲量₂ = ${d.m2}×${d.deltaV2.toFixed(2)} = ${d.impulse2.toFixed(0)} N·s</div>
+<div class="formula-step formula-highlight">总冲击力 F = (${d.impulse1.toFixed(0)}+${d.impulse2.toFixed(0)})/${d.collisionTime}/1000 = ${d.impactForce.toFixed(1)} kN</div>
+                `;
+            } else {
+                const d = lastCollisionData;
+                return `
+<div class="formula-line">
+    <span class="formula-name">【输入数据】</span>
+</div>
+<div class="formula-step">车辆: m = ${d.m} kg, v = ${d.v.toFixed(2)} m/s (${(d.v*3.6).toFixed(0)} km/h)</div>
+<div class="formula-step">墙壁: 视为质量无穷大(M→∞)，速度为0</div>
+<div class="formula-step">弹性系数: e = ${d.elasticity}</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式1】恢复系数</span>
+</div>
+<div class="formula-math">e = (v₂' - v₁') / (v₁ - v₂)</div>
+<div class="formula-step">由于 v₂ = 0 (墙不动)，v₂' = 0 (墙仍不动)</div>
+<div class="formula-step">e = (0 - v₁') / (v₁ - 0) = -v₁'/v₁</div>
+<div class="formula-step formula-highlight">v₁' = -e·v₁ = -${d.elasticity}×${d.v.toFixed(2)} = ${d.vFinal.toFixed(2)} m/s</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式2】动量变化</span>
+</div>
+<div class="formula-math">Δp = m(v' - v)</div>
+<div class="formula-step">Δp = ${d.m}×(${d.vFinal.toFixed(2)} - ${d.v.toFixed(2)}) = ${d.m}×${(-d.deltaV).toFixed(2)} = ${(-d.m*d.deltaV).toFixed(0)} kg·m/s</div>
+<div class="formula-step">(负号表示动量方向改变)</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式3】动能计算</span>
+</div>
+<div class="formula-math">Ek = ½mv²</div>
+<div class="formula-step">碰撞前: Ek = ½×${d.m}×${d.v.toFixed(2)}² = ${(d.keBefore/1000).toFixed(1)} kJ</div>
+<div class="formula-step">碰撞后: Ek' = ½×${d.m}×${d.vFinal.toFixed(2)}² = ${(d.keAfter/1000).toFixed(1)} kJ</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式4】能量损失</span>
+</div>
+<div class="formula-math">ΔE = Ek(前) - Ek(后)</div>
+<div class="formula-step">ΔE = ${(d.keBefore/1000).toFixed(1)} - ${(d.keAfter/1000).toFixed(1)} = ${(d.energyLoss/1000).toFixed(1)} kJ</div>
+<div class="formula-step">这部分能量转化为: 车身变形能 + 热能 + 声能 + 碎片动能</div>
+
+<div class="formula-divider"></div>
+
+<div class="formula-line">
+    <span class="formula-name">【公式5】冲击力估算</span>
+</div>
+<div class="formula-math">F = m·Δv/Δt</div>
+<div class="formula-step">假设碰撞时间 Δt = ${d.collisionTime*1000}ms (撞墙比两车碰撞时间更短)</div>
+<div class="formula-step">Δv = |v' - v| = |${d.vFinal.toFixed(2)} - ${d.v.toFixed(2)}| = ${d.deltaV.toFixed(2)} m/s</div>
+<div class="formula-step formula-highlight">F = ${d.m}×${d.deltaV.toFixed(2)}/${d.collisionTime}/1000 = ${d.impactForce.toFixed(1)} kN</div>
+<div class="formula-step">相当于约 ${(d.impactForce*1000/(9.8*d.m)*100).toFixed(0)} 个车重的冲击力!</div>
+                `;
+            }
+        }
+        
+        function createExplosion(x, y, force, velocity) {
+            const intensity = Math.min(force / 100, 10);
+            
+            for (let i = 0; i < intensity * 8; i++) {
+                const angle = (Math.random() - 0.5) * Math.PI;
+                const speed = Math.random() * velocity * 0.3 + 2;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed - 3;
+                const colors = ['#888', '#666', '#444', '#aaa'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particles.push(new Particle(x, y, vx, vy, color, 80 + Math.random() * 40, Math.random() * 5 + 2));
+            }
+            
+            for (let i = 0; i < intensity * 15; i++) {
+                const angle = (Math.random() - 0.5) * Math.PI;
+                const speed = Math.random() * 15 + 5;
+                sparks.push(new Spark(x, y, angle, speed));
+            }
+            
+            for (let i = 0; i < intensity * 3; i++) {
+                const angle = (Math.random() - 0.5) * Math.PI;
+                const speed = Math.random() * 3 + 1;
+                const vx = Math.cos(angle) * speed;
+                const vy = -Math.random() * 5 - 2;
+                particles.push(new Particle(x, y, vx, vy, 'rgba(100,100,100,0.5)', 120, Math.random() * 15 + 10));
+            }
+        }
+        
+        function updateStats(relSpeed, impactForce, energyLoss, keBefore, keAfter) {
+            document.getElementById('relSpeed').textContent = relSpeed.toFixed(0);
+            document.getElementById('impactForce').textContent = impactForce.toFixed(0);
+            document.getElementById('energyLoss').textContent = energyLoss.toFixed(0);
+            document.getElementById('keBefore').textContent = keBefore.toFixed(0);
+            document.getElementById('keAfter').textContent = keAfter.toFixed(0);
+        }
+        
+        function toggleFormula() {
+            const panel = document.getElementById('formulaPanel');
+            const content = document.getElementById('formulaContent');
+            
+            if (panel.classList.contains('show')) {
+                panel.classList.remove('show');
+            } else {
+                content.innerHTML = generateFormulaHTML();
+                panel.classList.add('show');
+            }
+        }
+        
+        function animate() {
+            if (!isRunning) return;
+            
+            let collisionData = null;
+            
+            if (mode === 'car-car' && car1 && car2) {
+                car1.update();
+                car2.update();
+                
+                if (!hasCollided && car1.x + car1.width >= car2.x) {
+                    hasCollided = true;
+                    collisionData = calculateCarCarCollision();
+                    
+                    const overlap = car1.x + car1.width - car2.x;
+                    car1.x -= overlap / 2;
+                    car2.x += overlap / 2;
+                }
+                
+                const stopped = (!car1.rollover && Math.abs(car1.vx) < 0.2) ||
+                               (car1.rollover && car1.grounded && Math.abs(car1.vx) < 0.2);
+                const stopped2 = (!car2.rollover && Math.abs(car2.vx) < 0.2) ||
+                                (car2.rollover && car2.grounded && Math.abs(car2.vx) < 0.2);
+                                
+                if (hasCollided && stopped && stopped2) {
+                    isRunning = false;
+                }
+            } else if (mode === 'car-wall' && car1 && wall) {
+                car1.update();
+                
+                if (!hasCollided && car1.x + car1.width >= wall.x) {
+                    hasCollided = true;
+                    collisionData = calculateCarWallCollision();
+                    car1.x = wall.x - car1.width;
+                }
+                
+                const stopped = (!car1.rollover && Math.abs(car1.vx) < 0.2) ||
+                               (car1.rollover && car1.grounded && Math.abs(car1.vx) < 0.2);
+                               
+                if (hasCollided && stopped) {
+                    isRunning = false;
+                }
+            }
+            
+            draw();
+            
+            if (collisionData) {
+                updateStats(collisionData.relSpeed, collisionData.impactForce, 
+                          collisionData.energyLoss, collisionData.keBefore, collisionData.keAfter);
+                
+                const info = document.getElementById('collisionInfo');
+                const text = document.getElementById('collisionText');
+                
+                let resultText = `
+                    <strong>冲击力:</strong> ${collisionData.impactForce.toFixed(1)} kN<br>
+                    <strong>能量损失:</strong> ${collisionData.energyLoss.toFixed(1)} kJ<br>
+                    <strong>碰撞类型:</strong> ${collisionData.collisionType}<br>
+                `;
+                
+                if (mode === 'car-car') {
+                    const v1Final = Math.abs(collisionData.v1Final).toFixed(0);
+                    const v2Final = Math.abs(collisionData.v2Final).toFixed(0);
+                    resultText += `<strong>碰撞后速度:</strong> A车 ${v1Final} km/h, B车 ${v2Final} km/h`;
+                } else {
+                    const vFinal = Math.abs(collisionData.vFinal).toFixed(0);
+                    resultText += `<strong>反弹速度:</strong> ${vFinal} km/h`;
+                }
+                
+                text.innerHTML = resultText;
+                info.classList.add('show');
+                
+                // 更新公式面板
+                const panel = document.getElementById('formulaPanel');
+                const content = document.getElementById('formulaContent');
+                if (panel.classList.contains('show')) {
+                    content.innerHTML = generateFormulaHTML();
+                }
+            }
+            
+            if (isRunning) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        function startSimulation() {
+            if (isRunning) return;
+            isRunning = true;
+            init();
+            animate();
+        }
+        
+        function resetSimulation() {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            init();
+        }
+        
+        function setMode(newMode) {
+            mode = newMode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            document.getElementById('car-car-controls').style.display = 
+                mode === 'car-car' ? 'block' : 'none';
+            document.getElementById('car-wall-controls').style.display = 
+                mode === 'car-wall' ? 'block' : 'none';
+            
+            resetSimulation();
+        }
+        
+        // 事件监听
+        document.getElementById('speed1').addEventListener('input', (e) => {
+            document.getElementById('speed1Val').textContent = e.target.value;
+        });
+        document.getElementById('mass1').addEventListener('input', (e) => {
+            document.getElementById('mass1Val').textContent = e.target.value;
+        });
+        document.getElementById('speed2').addEventListener('input', (e) => {
+            document.getElementById('speed2Val').textContent = e.target.value;
+        });
+        document.getElementById('mass2').addEventListener('input', (e) => {
+            document.getElementById('mass2Val').textContent = e.target.value;
+        });
+        document.getElementById('elasticityCar').addEventListener('input', (e) => {
+            document.getElementById('elasticityCarVal').textContent = e.target.value;
+        });
+        document.getElementById('speedWall').addEventListener('input', (e) => {
+            document.getElementById('speedWallVal').textContent = e.target.value;
+        });
+        document.getElementById('massWall').addEventListener('input', (e) => {
+            document.getElementById('massWallVal').textContent = e.target.value;
+        });
+        document.getElementById('elasticityWall').addEventListener('input', (e) => {
+            document.getElementById('elasticityWallVal').textContent = e.target.value;
+        });
+        
+        // 初始化
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原子模型演变史 - 交互式演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #aaa;
+        }
+
+        .model-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .model-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 2px solid transparent;
+        }
+
+        .model-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,212,255,0.3);
+        }
+
+        .model-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            border-color: #00d4ff;
+        }
+
+        .model-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .model-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .atom-display {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        .model-info {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .model-title {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .model-year {
+            display: inline-block;
+            background: linear-gradient(135deg, #7b2cbf, #ff006e);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .model-description {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .model-characteristics {
+            background: rgba(0,212,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .model-characteristics h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .model-characteristics ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .model-characteristics li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .model-characteristics li::before {
+            content: '⚛';
+            position: absolute;
+            left: 0;
+            color: #7b2cbf;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            padding: 12px 25px;
+            border: 2px solid #00d4ff;
+            background: transparent;
+            color: #00d4ff;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+
+        .control-btn.active {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+
+        .element-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .element-selector label {
+            color: #aaa;
+        }
+
+        .element-selector select {
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 2px solid #7b2cbf;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .element-selector select option {
+            background: #1a1a2e;
+        }
+
+        .timeline {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .timeline h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #00d4ff;
+        }
+
+        .timeline-line {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            padding: 0 10px;
+        }
+
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf, #ff006e);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .timeline-dot {
+            width: 30px;
+            height: 30px;
+            background: #1a1a2e;
+            border: 4px solid #00d4ff;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-dot:hover {
+            transform: scale(1.3);
+            background: #00d4ff;
+        }
+
+        .timeline-year {
+            font-size: 0.9em;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .timeline-name {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .proton { background: #ff4444; }
+        .neutron { background: #888; }
+        .electron { background: #00d4ff; }
+        .nucleus { background: radial-gradient(circle, #ff4444, #cc0000); }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .speed-control input {
+            width: 200px;
+            accent-color: #00d4ff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            margin-top: 30px;
+        }
+
+        .auto-rotate-info {
+            text-align: center;
+            color: #888;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚛ 原子模型的演变</h1>
+            <p class="subtitle">从道尔顿到量子力学 - 探索人类对原子结构的认识历程</p>
+        </header>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color proton"></div>
+                <span>质子</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color neutron"></div>
+                <span>中子</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color electron"></div>
+                <span>电子</span>
+            </div>
+        </div>
+
+        <div class="element-selector">
+            <label>选择元素:</label>
+            <select id="elementSelect">
+                <option value="h">氢 (H) - 1个质子</option>
+                <option value="he">氦 (He) - 2个质子</option>
+                <option value="li">锂 (Li) - 3个质子</option>
+                <option value="be">铍 (Be) - 4个质子</option>
+                <option value="b">硼 (B) - 5个质子</option>
+                <option value="c">碳 (C) - 6个质子</option>
+                <option value="n">氮 (N) - 7个质子</option>
+                <option value="o">氧 (O) - 8个质子</option>
+                <option value="ne" selected>氖 (Ne) - 10个质子</option>
+                <option value="na">钠 (Na) - 11个质子</option>
+                <option value="fe">铁 (Fe) - 26个质子</option>
+                <option value="au">金 (Au) - 79个质子</option>
+            </select>
+        </div>
+
+        <div class="model-selector">
+            <button class="model-btn active" data-model="dalton">道尔顿模型<br><small>1803</small></button>
+            <button class="model-btn" data-model="thomson">汤姆孙模型<br><small>1904</small></button>
+            <button class="model-btn" data-model="rutherford">卢瑟福模型<br><small>1911</small></button>
+            <button class="model-btn" data-model="bohr">波尔模型<br><small>1913</small></button>
+            <button class="model-btn" data-model="solar">太阳系模型<br><small>行星模型</small></button>
+            <button class="model-btn" data-model="quantum">量子力学模型<br><small>现代</small></button>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="playPauseBtn">▶ 播放/暂停</button>
+            <button class="control-btn active" id="autoRotateBtn">🔄 自动旋转</button>
+            <button class="control-btn" id="showLabelsBtn">🏷 显示标签</button>
+            <button class="control-btn" id="showOrbitsBtn">◎ 显示轨道</button>
+        </div>
+
+        <div class="speed-control">
+            <span>慢速</span>
+            <input type="range" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
+            <span>快速</span>
+            <span id="speedValue">速度: 1x</span>
+        </div>
+
+        <div class="model-container">
+            <div class="atom-display">
+                <canvas id="atomCanvas" width="450" height="450"></canvas>
+            </div>
+            <div class="model-info" id="modelInfo">
+                <!-- 内容由JS动态填充 -->
+            </div>
+        </div>
+
+        <p class="auto-rotate-info">💡 提示：拖拽画布可手动旋转视角，自动旋转时视角会不断变化</p>
+
+        <div class="timeline">
+            <h2>📜 原子模型发展史</h2>
+            <div class="timeline-line">
+                <div class="timeline-item">
+                    <div class="timeline-dot" data-model="dalton"></div>
+                    <div class="timeline-year">1803</div>
+                    <div class="timeline-name">道尔顿</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot" data-model="thomson"></div>
+                    <div class="timeline-year">1904</div>
+                    <div class="timeline-name">汤姆孙</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot" data-model="rutherford"></div>
+                    <div class="timeline-year">1911</div>
+                    <div class="timeline-name">卢瑟福</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot" data-model="bohr"></div>
+                    <div class="timeline-year">1913</div>
+                    <div class="timeline-name">玻尔</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot" data-model="quantum"></div>
+                    <div class="timeline-year">1926</div>
+                    <div class="timeline-name">量子力学</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>原子模型演示 | 使用 HTML5 Canvas 绘制</p>
+        </footer>
+    </div>
+
+    <script>
+        // 元素数据
+        const elements = {
+            h: { name: '氢', symbol: 'H', protons: 1, neutrons: 0, electrons: 1, shells: 1 },
+            he: { name: '氦', symbol: 'He', protons: 2, neutrons: 2, electrons: 2, shells: 1 },
+            li: { name: '锂', symbol: 'Li', protons: 3, neutrons: 4, electrons: 3, shells: 2 },
+            be: { name: '铍', symbol: 'Be', protons: 4, neutrons: 5, electrons: 4, shells: 2 },
+            b: { name: '硼', symbol: 'B', protons: 5, neutrons: 6, electrons: 5, shells: 2 },
+            c: { name: '碳', symbol: 'C', protons: 6, neutrons: 6, electrons: 6, shells: 2 },
+            n: { name: '氮', symbol: 'N', protons: 7, neutrons: 7, electrons: 7, shells: 2 },
+            o: { name: '氧', symbol: 'O', protons: 8, neutrons: 8, electrons: 8, shells: 2 },
+            ne: { name: '氖', symbol: 'Ne', protons: 10, neutrons: 10, electrons: 10, shells: 2 },
+            na: { name: '钠', symbol: 'Na', protons: 11, neutrons: 12, electrons: 11, shells: 3 },
+            fe: { name: '铁', symbol: 'Fe', protons: 26, neutrons: 30, electrons: 26, shells: 4 },
+            au: { name: '金', symbol: 'Au', protons: 79, neutrons: 118, electrons: 79, shells: 6 }
+        };
+
+        // 每层电子最大容量
+        const maxElectronsPerShell = [2, 8, 18, 32, 32, 18, 8];
+
+        // 计算每层电子分布
+        function getElectronShells(electronCount) {
+            const shells = [];
+            let remaining = electronCount;
+            for (let i = 0; i < maxElectronsPerShell.length && remaining > 0; i++) {
+                const max = maxElectronsPerShell[i];
+                const count = Math.min(max, remaining);
+                shells.push(count);
+                remaining -= count;
+            }
+            return shells;
+        }
+
+        // 模型信息
+        const modelInfo = {
+            dalton: {
+                title: '道尔顿原子模型',
+                year: '1803年',
+                description: '约翰·道尔顿提出原子是物质不可再分的最小单位，如同实心的小球。这一模型奠定了现代原子论的基础。',
+                characteristics: [
+                    '原子是最小的、不可分割的实心球体',
+                    '同种元素的原子质量相同',
+                    '不同元素的原子质量不同',
+                    '原子在化学反应中不可创造也不可毁灭'
+                ]
+            },
+            thomson: {
+                title: '汤姆孙原子模型（布丁模型）',
+                year: '1904年',
+                description: 'J.J.汤姆孙发现电子后，提出原子是一个带正电的球体，电子镶嵌其中，如同葡萄干面包或梅子布丁。',
+                characteristics: [
+                    '原子是一个带正电荷的球体',
+                    '电子像葡萄干一样嵌在正电荷中',
+                    '正负电荷相互抵消，原子呈电中性',
+                    '成功解释了原子发光现象'
+                ]
+            },
+            rutherford: {
+                title: '卢瑟福原子模型（核式结构）',
+                year: '1911年',
+                description: '欧内斯特·卢瑟福通过α粒子散射实验发现原子内部几乎是空的，质量集中在极小的原子核中。',
+                characteristics: [
+                    '原子中心有一个极小的原子核',
+                    '原子核带正电，包含几乎全部质量',
+                    '电子在核外空间运动',
+                    '原子内部大部分是空的'
+                ]
+            },
+            bohr: {
+                title: '玻尔模型（量子化轨道）',
+                year: '1913年',
+                description: '尼尔斯·玻尔提出电子在特定轨道上运动，吸收或释放能量时会跃迁到不同轨道，解释了氢原子光谱。',
+                characteristics: [
+                    '电子在离散的量子化轨道上运动',
+                    '轨道能量是固定的（能级）',
+                    '电子跃迁时吸收/释放光子',
+                    '成功解释氢原子光谱线'
+                ]
+            },
+            solar: {
+                title: '太阳系行星模型',
+                year: '1911年后',
+                description: '受卢瑟福核式结构启发，有时将原子结构比喻为微型太阳系，原子核在中心，电子像行星一样在轨道上运行。',
+                characteristics: [
+                    '原子核在中心，相当于太阳',
+                    '电子在核外轨道运动，相当于行星',
+                    '强调原子内部空间的广阔',
+                    '是理解核式结构的直观比喻'
+                ]
+            },
+            quantum: {
+                title: '量子力学模型（电子云模型）',
+                year: '1926年至今',
+                description: '现代量子力学认为电子没有固定轨道，而是以概率云的形式存在。薛定谔方程描述了电子在原子中的行为。',
+                characteristics: [
+                    '电子位置由概率云描述（电子云）',
+                    '使用波函数描述电子状态',
+                    '海森堡不确定性原理：无法同时精确知道位置和动量',
+                    '原子轨道是电子出现概率最高的区域'
+                ]
+            }
+        };
+
+        // 画布和绘图上下文
+        const canvas = document.getElementById('atomCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 状态变量
+        let currentModel = 'dalton';
+        let currentElement = 'ne';
+        let rotationX = 0.5;
+        let rotationY = 0;
+        let isAnimating = true;
+        let autoRotate = true;
+        let showLabels = false;
+        let showOrbits = true;
+        let speed = 1;
+        let isDragging = false;
+        let lastMouseX, lastMouseY;
+        let time = 0;
+
+        // 3D投影函数
+        function project3D(x, y, z, scale, offsetX, offsetY) {
+            const perspective = 800;
+            const factor = perspective / (perspective + z);
+            return {
+                x: offsetX + x * scale * factor,
+                y: offsetY + y * scale * factor,
+                scale: factor
+            };
+        }
+
+        // 绘制函数
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = 2;
+            
+            const elem = elements[currentElement];
+            const shells = getElectronShells(elem.electrons);
+            const shellRadius = 25;
+
+            // 根据模型绘制
+            switch(currentModel) {
+                case 'dalton':
+                    drawDaltonModel(centerX, centerY, scale, elem);
+                    break;
+                case 'thomson':
+                    drawThomsonModel(centerX, centerY, scale, elem);
+                    break;
+                case 'rutherford':
+                    drawRutherfordModel(centerX, centerY, scale, elem, shells, shellRadius);
+                    break;
+                case 'bohr':
+                    drawBohrModel(centerX, centerY, scale, elem, shells, shellRadius);
+                    break;
+                case 'solar':
+                    drawSolarModel(centerX, centerY, scale, elem, shells, shellRadius);
+                    break;
+                case 'quantum':
+                    drawQuantumModel(centerX, centerY, scale, elem, shells, shellRadius);
+                    break;
+            }
+
+            // 绘制元素信息
+            drawElementInfo(centerX, canvas.height - 30, elem);
+        }
+
+        function drawDaltonModel(cx, cy, scale, elem) {
+            // 道尔顿模型：实心球
+            const radius = Math.min(80, 30 + elem.protons * 3);
+            
+            const gradient = ctx.createRadialGradient(cx - radius/3, cy - radius/3, 0, cx, cy, radius);
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(0.5, '#ee5a5a');
+            gradient.addColorStop(1, '#cc4444');
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.strokeStyle = '#ff8888';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            if (showLabels) {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(elem.symbol, cx, cy);
+            }
+
+            // 装饰性球体纹理
+            ctx.beginPath();
+            ctx.arc(cx + radius/4, cy - radius/4, radius/6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fill();
+        }
+
+        function drawThomsonModel(cx, cy, scale, elem) {
+            // 汤姆孙模型：正电球体 + 电子分布
+            
+            // 正电背景球
+            const radius = Math.min(100, 40 + elem.protons * 3);
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+            gradient.addColorStop(0, 'rgba(255,100,100,0.9)');
+            gradient.addColorStop(0.7, 'rgba(255,80,80,0.7)');
+            gradient.addColorStop(1, 'rgba(200,50,50,0.5)');
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // 在球体上绘制嵌入的电子
+            const electronCount = Math.min(elem.electrons, 20);
+            for (let i = 0; i < electronCount; i++) {
+                const angle = (i / electronCount) * Math.PI * 2 + time * 0.001;
+                const r = radius * 0.6 * Math.sqrt(Math.random() * 0.8 + 0.2);
+                const ex = cx + Math.cos(angle) * r;
+                const ey = cy + Math.sin(angle) * r;
+                
+                ctx.beginPath();
+                ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#00d4ff';
+                ctx.fill();
+                ctx.strokeStyle = '#0099cc';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            if (showLabels) {
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('+ 正电荷', cx, cy + radius + 30);
+                ctx.fillText('- 电子', cx, cy + radius + 50);
+            }
+        }
+
+        // ============ 卢瑟福模型 ============
+        // 特点：原子核极小（点状），电子在核外任意运动，强调原子内部空旷
+        function drawRutherfordModel(cx, cy, scale, elem, shells, shellRadius) {
+            // 绘制"空白空间"背景纹理 - 强调原子内部大部分是空的
+            ctx.fillStyle = 'rgba(30, 30, 60, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制随机椭圆轨道（没有固定能级，电子可以在任意位置）
+            if (showOrbits) {
+                ctx.setLineDash([5, 10]); // 虚线表示不确定的轨道
+                for (let i = 0; i < 5; i++) {
+                    const orbitR = 40 + i * 30;
+                    const ellipseRatio = 0.3 + Math.random() * 0.4;
+                    const tilt = Math.random() * Math.PI;
+                    
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, orbitR, orbitR * ellipseRatio, tilt, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(100, 100, 150, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+            }
+
+            // 绘制极小的原子核（强调"极小"）- 卢瑟福发现核非常小
+            const nucleusRadius = Math.min(8, 3 + elem.protons * 0.1);
+            
+            // 核的光晕效果
+            const glowGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, nucleusRadius * 4);
+            glowGradient.addColorStop(0, 'rgba(255, 68, 68, 0.8)');
+            glowGradient.addColorStop(0.5, 'rgba(255, 68, 68, 0.3)');
+            glowGradient.addColorStop(1, 'rgba(255, 68, 68, 0)');
+            ctx.beginPath();
+            ctx.arc(cx, cy, nucleusRadius * 4, 0, Math.PI * 2);
+            ctx.fillStyle = glowGradient;
+            ctx.fill();
+            
+            // 核心亮点
+            const nucleusGradient = ctx.createRadialGradient(cx - nucleusRadius/3, cy - nucleusRadius/3, 0, cx, cy, nucleusRadius);
+            nucleusGradient.addColorStop(0, '#ffffff');
+            nucleusGradient.addColorStop(0.3, '#ff6666');
+            nucleusGradient.addColorStop(1, '#cc2222');
+            ctx.beginPath();
+            ctx.arc(cx, cy, nucleusRadius, 0, Math.PI * 2);
+            ctx.fillStyle = nucleusGradient;
+            ctx.fill();
+
+            // 电子随机运动（没有固定轨道）
+            shells.forEach((electronCount, shellIndex) => {
+                const baseR = (shellIndex + 1) * shellRadius * 1.5;
+                
+                for (let i = 0; i < Math.min(electronCount, 3); i++) {
+                    // 随机性：电子位置变化
+                    const randomR = baseR + (Math.sin(time * 0.001 + i * 2) * 20);
+                    const randomAngle = (i / Math.min(electronCount, 3)) * Math.PI * 2 + time * 0.001 * speed + shellIndex;
+                    const tilt = Math.random() * 0.5;
+                    
+                    let x = randomR * Math.cos(randomAngle);
+                    let y = randomR * Math.sin(randomAngle) * tilt;
+                    let z = randomR * Math.sin(randomAngle) * Math.cos(rotationX);
+                    
+                    const perspective = 800;
+                    const factor = perspective / (perspective + z);
+                    const screenX = cx + x * factor;
+                    const screenY = cy + y * factor + z * factor * 0.2;
+                    
+                    // 电子轨迹（模糊表示不确定性）
+                    const trailGradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 12);
+                    trailGradient.addColorStop(0, 'rgba(0, 212, 255, 0.6)');
+                    trailGradient.addColorStop(0.5, 'rgba(0, 212, 255, 0.2)');
+                    trailGradient.addColorStop(1, 'rgba(0, 212, 255, 0)');
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 12, 0, Math.PI * 2);
+                    ctx.fillStyle = trailGradient;
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#00d4ff';
+                    ctx.fill();
+                }
+            });
+
+            // 绘制标签
+            if (showLabels) {
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('原子核极小（占原子体积的万亿分之一）', cx, cy + 160);
+                ctx.fillText('电子可在任意位置运动', cx, cy + 180);
+                ctx.fillText('原子内部99.99%是空的', cx, cy + 200);
+            }
+            
+            // 标注核的大小
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + nucleusRadius * 5, cy);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // ============ 玻尔模型 ============
+        // 特点：量子化轨道，电子在固定能级上运动，有轨道光环
+        function drawBohrModel(cx, cy, scale, elem, shells, shellRadius) {
+            // 绘制背景能级图
+            const bgGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 200);
+            bgGradient.addColorStop(0, 'rgba(0, 50, 100, 0.3)');
+            bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制量子化轨道（实线、发光）
+            shells.forEach((electronCount, shellIndex) => {
+                const shellR = (shellIndex + 1) * shellRadius * 1.5;
+                const hue = 180 + shellIndex * 30; // 不同轨道不同颜色
+                
+                // 轨道光环
+                if (showOrbits) {
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, shellR, shellR * (0.4 + 0.6 * Math.abs(Math.cos(rotationX))), rotationY, 0, Math.PI * 2);
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.4)`;
+                    ctx.lineWidth = 8;
+                    ctx.stroke();
+                    
+                    // 内层细线
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, shellR, shellR * (0.4 + 0.6 * Math.abs(Math.cos(rotationX))), rotationY, 0, Math.PI * 2);
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.8)`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // 在轨道上绘制电子
+                for (let i = 0; i < electronCount; i++) {
+                    const baseAngle = (i / electronCount) * Math.PI * 2 + time * 0.003 * speed;
+                    const electronAngle = baseAngle + shellIndex * 0.3;
+                    
+                    let x = shellR * Math.cos(electronAngle);
+                    let y = shellR * Math.sin(electronAngle) * 0.3;
+                    let z = shellR * Math.sin(electronAngle) * Math.cos(rotationX);
+                    
+                    const perspective = 800;
+                    const factor = perspective / (perspective + z);
+                    const screenX = cx + x * factor;
+                    const screenY = cy + y * factor * Math.abs(Math.cos(rotationX)) + z * factor * 0.2;
+                    
+                    // 电子发光效果
+                    const glowGradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 15);
+                    glowGradient.addColorStop(0, `hsla(${hue}, 100%, 70%, 0.8)`);
+                    glowGradient.addColorStop(0.5, `hsla(${hue}, 100%, 50%, 0.3)`);
+                    glowGradient.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 15, 0, Math.PI * 2);
+                    ctx.fillStyle = glowGradient;
+                    ctx.fill();
+                    
+                    // 电子核心
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                }
+                
+                // 轨道能级标注
+                if (showLabels) {
+                    ctx.fillStyle = `hsla(${hue}, 100%, 70%, 0.8)`;
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'left';
+                    const labelY = cy + shellR * (0.4 + 0.6 * Math.abs(Math.cos(rotationX))) * Math.sin(rotationY) + 5;
+                    ctx.fillText(`n=${shellIndex + 1}`, cx + shellR + 10, cy);
+                }
+            });
+
+            // 绘制原子核
+            const nucleusRadius = Math.min(20, 6 + elem.protons * 0.3);
+            const nucleusGradient = ctx.createRadialGradient(cx - nucleusRadius/3, cy - nucleusRadius/3, 0, cx, cy, nucleusRadius);
+            nucleusGradient.addColorStop(0, '#ffffff');
+            nucleusGradient.addColorStop(0.3, '#ff6666');
+            nucleusGradient.addColorStop(1, '#cc2222');
+            ctx.beginPath();
+            ctx.arc(cx, cy, nucleusRadius, 0, Math.PI * 2);
+            ctx.fillStyle = nucleusGradient;
+            ctx.fill();
+            
+            // 核晕
+            ctx.beginPath();
+            ctx.arc(cx, cy, nucleusRadius + 5, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 100, 100, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            if (showLabels) {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`能级: n=1, 2, 3... (量子化)`, cx, cy + 180);
+                ctx.fillText(`${shells.length}个电子层`, cx, cy + 200);
+            }
+        }
+
+        // ============ 太阳系行星模型 ============
+        // 特点：原子核大（像太阳），清晰的行星轨道，轨道标注
+        function drawSolarModel(cx, cy, scale, elem, shells, shellRadius) {
+            // 深空背景
+            ctx.fillStyle = 'rgba(0, 0, 20, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制一些星星
+            for (let i = 0; i < 50; i++) {
+                const starX = (Math.sin(i * 12345) * 0.5 + 0.5) * canvas.width;
+                const starY = (Math.cos(i * 54321) * 0.5 + 0.5) * canvas.height;
+                const starSize = 1 + Math.random() * 1.5;
+                const twinkle = 0.5 + Math.sin(time * 0.005 + i) * 0.5;
+                ctx.beginPath();
+                ctx.arc(starX, starY, starSize, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${twinkle * 0.8})`;
+                ctx.fill();
+            }
+
+            // 轨道名称
+            const orbitNames = ['K层', 'L层', 'M层', 'N层', 'O层', 'P层'];
+
+            // 绘制行星轨道（实线、清晰）
+            shells.forEach((electronCount, shellIndex) => {
+                const shellR = (shellIndex + 1) * shellRadius * 1.5;
+                const orbitColor = shellIndex === 0 ? '#ff9944' : shellIndex === 1 ? '#44aaff' : shellIndex === 2 ? '#44ff88' : '#ff44aa';
+                
+                // 轨道
+                if (showOrbits) {
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, shellR, shellR * (0.3 + 0.7 * Math.abs(Math.cos(rotationX))), rotationY, 0, Math.PI * 2);
+                    ctx.strokeStyle = orbitColor;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 轨道标签
+                    if (showLabels) {
+                        ctx.fillStyle = orbitColor;
+                        ctx.font = '11px Arial';
+                        const labelAngle = rotationY + Math.PI / 4;
+                        const labelX = cx + (shellR + 15) * Math.cos(labelAngle);
+                        const labelY = cy + (shellR + 15) * Math.sin(labelAngle) * (0.3 + 0.7 * Math.abs(Math.cos(rotationX)));
+                        ctx.fillText(`${orbitNames[shellIndex] || '电子层'}`, labelX, labelY);
+                    }
+                }
+
+                // 绘制电子（像行星）
+                for (let i = 0; i < Math.min(electronCount, 4); i++) {
+                    const baseAngle = (i / Math.min(electronCount, 4)) * Math.PI * 2 + time * 0.0015 * speed;
+                    const electronAngle = baseAngle + shellIndex * 0.5;
+                    
+                    let x = shellR * Math.cos(electronAngle);
+                    let y = shellR * Math.sin(electronAngle) * 0.3;
+                    let z = shellR * Math.sin(electronAngle) * Math.cos(rotationX);
+                    
+                    const perspective = 800;
+                    const factor = perspective / (perspective + z);
+                    const screenX = cx + x * factor;
+                    const screenY = cy + y * factor * Math.abs(Math.cos(rotationX)) + z * factor * 0.2;
+                    
+                    // 行星效果
+                    const planetGradient = ctx.createRadialGradient(screenX - 2, screenY - 2, 0, screenX, screenY, 8);
+                    planetGradient.addColorStop(0, '#ffffff');
+                    planetGradient.addColorStop(0.4, orbitColor);
+                    planetGradient.addColorStop(1, `rgba(${shellIndex === 0 ? '255,150,50' : shellIndex === 1 ? '50,150,255' : shellIndex === 2 ? '50,255,150' : '255,50,200'}, 0.8)`);
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 6 + factor * 2, 0, Math.PI * 2);
+                    ctx.fillStyle = planetGradient;
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            });
+
+            // 太阳（原子核）- 更大更亮
+            const nucleusRadius = Math.min(40, 15 + elem.protons * 0.5);
+            
+            // 太阳光晕
+            for (let i = 3; i >= 0; i--) {
+                const haloR = nucleusRadius + i * 8;
+                const haloAlpha = 0.2 - i * 0.05;
+                ctx.beginPath();
+                ctx.arc(cx, cy, haloR, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 200, 50, ${haloAlpha})`;
+                ctx.fill();
+            }
+            
+            // 太阳本体
+            const sunGradient = ctx.createRadialGradient(cx - nucleusRadius/3, cy - nucleusRadius/3, 0, cx, cy, nucleusRadius);
+            sunGradient.addColorStop(0, '#ffffff');
+            sunGradient.addColorStop(0.3, '#ffff88');
+            sunGradient.addColorStop(0.7, '#ffaa00');
+            sunGradient.addColorStop(1, '#ff6600');
+            ctx.beginPath();
+            ctx.arc(cx, cy, nucleusRadius, 0, Math.PI * 2);
+            ctx.fillStyle = sunGradient;
+            ctx.fill();
+            
+            // 日冕效果
+            ctx.beginPath();
+            ctx.arc(cx, cy, nucleusRadius + 2, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 200, 50, 0.6)';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            if (showLabels) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('☀ 原子核（太阳）', cx, cy + nucleusRadius + 20);
+                ctx.fillStyle = '#88ccff';
+                ctx.fillText('⚪ 电子（行星）', cx, cy + nucleusRadius + 38);
+            }
+        }
+
+        // ============ 量子力学模型 ============
+        function drawQuantumModel(cx, cy, scale, elem, shells, shellRadius) {
+            // 量子力学模型：电子云
+            
+            // 绘制原子核
+            const nucleusRadius = Math.min(20, 6 + elem.protons * 0.3);
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, nucleusRadius);
+            gradient.addColorStop(0, '#ff6666');
+            gradient.addColorStop(0.6, '#ff4444');
+            gradient.addColorStop(1, '#cc2222');
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, nucleusRadius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // 绘制电子云轨道
+            shells.forEach((electronCount, shellIndex) => {
+                const shellR = (shellIndex + 1) * shellRadius * 1.5;
+                
+                // 绘制概率云
+                for (let cloud = 0; cloud < 3; cloud++) {
+                    ctx.beginPath();
+                    const cloudR = shellR * (0.8 + cloud * 0.15);
+                    ctx.ellipse(cx, cy, cloudR, cloudR * (0.2 + 0.8 * Math.abs(Math.cos(rotationX))), 
+                        rotationY, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(0, 212, 255, ${0.1 - cloud * 0.02})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // 在轨道上随机分布电子（概率表示）
+                const displayElectrons = Math.min(electronCount, 8);
+                for (let i = 0; i < displayElectrons; i++) {
+                    const angle = Math.random() * Math.PI * 2 + time * 0.001 * (Math.random() - 0.5);
+                    const rVariation = 0.7 + Math.random() * 0.3;
+                    const r = shellR * rVariation;
+                    
+                    let x = r * Math.cos(angle);
+                    let y = r * Math.sin(angle) * 0.3;
+                    let z = r * Math.sin(angle) * Math.cos(rotationX);
+                    
+                    const perspective = 800;
+                    const factor = perspective / (perspective + z);
+                    const screenX = cx + x * factor;
+                    const screenY = cy + y * factor * Math.abs(Math.cos(rotationX)) + z * factor * 0.2;
+                    
+                    // 电子模糊效果
+                    const gradient = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, 15);
+                    gradient.addColorStop(0, 'rgba(0, 212, 255, 0.8)');
+                    gradient.addColorStop(0.3, 'rgba(0, 212, 255, 0.3)');
+                    gradient.addColorStop(1, 'rgba(0, 212, 255, 0)');
+                    
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 15, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    
+                    // 电子核心
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#00ffff';
+                    ctx.fill();
+                }
+            });
+
+            // 绘制标签
+            if (showLabels) {
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('电子云模型 - 电子位置以概率分布', cx, canvas.height - 20);
+                ctx.fillText(`出现概率最高的区域（${shells.length}个电子层）`, cx, canvas.height - 40);
+            }
+        }
+
+        function drawElementInfo(cx, cy, elem) {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(cx - 80, cy - 15, 160, 30);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${elem.name} (${elem.symbol})`, cx, cy + 5);
+        }
+
+        function updateModelInfo() {
+            const info = modelInfo[currentModel];
+            const container = document.getElementById('modelInfo');
+            
+            container.innerHTML = `
+                <h2 class="model-title">${info.title}</h2>
+                <span class="model-year">${info.year}</span>
+                <p class="model-description">${info.description}</p>
+                <div class="model-characteristics">
+                    <h3>🔬 主要特征</h3>
+                    <ul>
+                        ${info.characteristics.map(c => `<li>${c}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // 动画循环
+        function animate() {
+            if (isAnimating) {
+                time += 16 * speed;
+                if (autoRotate) {
+                    rotationY += 0.008 * speed;
+                }
+            }
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        // 事件监听
+        document.querySelectorAll('.model-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentModel = btn.dataset.model;
+                updateModelInfo();
+            });
+        });
+
+        document.querySelectorAll('.timeline-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                const model = dot.dataset.model;
+                document.querySelectorAll('.model-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.model === model);
+                });
+                currentModel = model;
+                updateModelInfo();
+            });
+        });
+
+        document.getElementById('elementSelect').addEventListener('change', (e) => {
+            currentElement = e.target.value;
+        });
+
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            isAnimating = !isAnimating;
+        });
+
+        document.getElementById('autoRotateBtn').addEventListener('click', () => {
+            autoRotate = !autoRotate;
+            document.getElementById('autoRotateBtn').classList.toggle('active', autoRotate);
+        });
+
+        document.getElementById('showLabelsBtn').addEventListener('click', () => {
+            showLabels = !showLabels;
+            document.getElementById('showLabelsBtn').classList.toggle('active', showLabels);
+        });
+
+        document.getElementById('showOrbitsBtn').addEventListener('click', () => {
+            showOrbits = !showOrbits;
+            document.getElementById('showOrbitsBtn').classList.toggle('active', showOrbits);
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = `速度: ${speed}x`;
+        });
+
+        // 鼠标拖拽控制
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                rotationY += deltaX * 0.01;
+                rotationX += deltaY * 0.01;
+                rotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotationX));
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // 触摸支持
+        canvas.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            lastMouseX = e.touches[0].clientX;
+            lastMouseY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                const deltaX = e.touches[0].clientX - lastMouseX;
+                const deltaY = e.touches[0].clientY - lastMouseY;
+                rotationY += deltaX * 0.01;
+                rotationX += deltaY * 0.01;
+                rotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotationX));
+                lastMouseX = e.touches[0].clientX;
+                lastMouseY = e.touches[0].clientY;
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // 初始化
+        updateModelInfo();
+        animate();
+    </script>
+</body>
+</html>

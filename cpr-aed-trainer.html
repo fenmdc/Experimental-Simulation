@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPR + AED 急救培训模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(231, 76, 60, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .header .emergency-badge {
+            display: inline-block;
+            background: #fff;
+            color: #e74c3c;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.1);
+            color: #aaa;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .tab-btn.active {
+            background: #e74c3c;
+            color: #fff;
+        }
+        
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .panel.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 教程样式 */
+        .tutorial-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .tutorial-section h2 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tutorial-section h3 {
+            color: #3498db;
+            margin: 20px 0 10px 0;
+        }
+        
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+        }
+        
+        .step-list li {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 15px;
+            padding-top: 5px;
+        }
+        
+        .step-list li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 35px;
+            height: 35px;
+            background: #e74c3c;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .highlight-box {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .highlight-box strong {
+            color: #e74c3c;
+        }
+        
+        .tip-box {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .tip-box::before {
+            content: "💡 ";
+        }
+        
+        /* 模拟器样式 */
+        .simulator-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .simulator-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .sim-main {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .sim-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .status-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            transition: all 0.3s;
+        }
+        
+        .status-indicator.waiting {
+            background: #f39c12;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.cpr {
+            background: #e74c3c;
+            animation: pulse 0.5s infinite;
+        }
+        
+        .status-indicator.aed {
+            background: #3498db;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-indicator.success {
+            background: #27ae60;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .timer-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            font-family: monospace;
+            color: #fff;
+            margin: 10px 0;
+        }
+        
+        .bpm-display {
+            font-size: 1.5em;
+            color: #e74c3c;
+        }
+        
+        .depth-meter {
+            margin-top: 15px;
+        }
+        
+        .depth-bar {
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .depth-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f39c12, #e74c3c);
+            width: 0%;
+            transition: width 0.1s;
+        }
+        
+        .depth-fill.good {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+        
+        .depth-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #888;
+        }
+        
+        /* 人体模型区域 */
+        .manikin-area {
+            position: relative;
+            height: 400px;
+            background: #0a0a15;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .manikin-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .compression-zone {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .compression-zone:hover {
+            filter: brightness(1.2);
+        }
+        
+        .compression-zone:active {
+            filter: brightness(0.8);
+        }
+        
+        /* AED 模拟 */
+        .aed-device {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .aed-screen {
+            background: #000;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 2px solid #555;
+        }
+        
+        .aed-screen.active {
+            border-color: #3498db;
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+        }
+        
+        .aed-screen.analyzing {
+            border-color: #f39c12;
+            box-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+        }
+        
+        .aed-screen.shock {
+            border-color: #e74c3c;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.8);
+        }
+        
+        .aed-message {
+            font-size: 1.3em;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .aed-message.large {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .aed-pads {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .pad {
+            width: 80px;
+            height: 120px;
+            background: #e74c3c;
+            border-radius: 10px;
+            border: 3px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .pad:hover {
+            transform: scale(1.05);
+        }
+        
+        .pad.placed {
+            background: #27ae60;
+            box-shadow: 0 0 20px rgba(39, 174, 96, 0.5);
+        }
+        
+        .pad::before {
+            content: attr(data-label);
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 0.7em;
+        }
+        
+        .aed-button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .aed-button.shock {
+            background: #e74c3c;
+            color: #fff;
+            animation: flash 0.5s infinite;
+        }
+        
+        .aed-button.shock:disabled {
+            background: #555;
+            animation: none;
+            cursor: not-allowed;
+        }
+        
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .aed-button.power {
+            background: #27ae60;
+            color: #fff;
+        }
+        
+        /* 控制按钮 */
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #e74c3c;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: #fff;
+        }
+        
+        /* 流程指示器 */
+        .flow-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+        }
+        
+        .flow-step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+        }
+        
+        .flow-step::after {
+            content: "→";
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #555;
+            font-size: 1.5em;
+        }
+        
+        .flow-step:last-child::after {
+            display: none;
+        }
+        
+        .flow-step .icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .flow-step.active {
+            background: rgba(231, 76, 60, 0.2);
+            border-radius: 8px;
+        }
+        
+        .flow-step.completed {
+            opacity: 0.5;
+        }
+        
+        /* 统计数据 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        /* 警告框 */
+        .warning-banner {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .warning-banner .icon {
+            font-size: 2em;
+        }
+        
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        /* 语音气泡 */
+        .voice-bubble {
+            background: rgba(52, 152, 219, 0.2);
+            border: 2px solid #3498db;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            position: relative;
+            animation: speak 0.3s;
+        }
+        
+        .voice-bubble::before {
+            content: "🔊";
+            margin-right: 10px;
+        }
+        
+        @keyframes speak {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        /* 节拍器 */
+        .metronome {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 15px 0;
+        }
+        
+        .beat {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #333;
+            transition: all 0.1s;
+        }
+        
+        .beat.active {
+            background: #e74c3c;
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🫀 CPR + AED 急救培训模拟器</h1>
+        <div class="emergency-badge">⚠️ 仅供培训使用</div>
+    </div>
+    
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tutorial">📚 教程</button>
+            <button class="tab-btn" data-tab="cpr-sim">🫀 CPR模拟</button>
+            <button class="tab-btn" data-tab="aed-sim">⚡ AED模拟</button>
+            <button class="tab-btn" data-tab="full-sim">🚨 完整流程</button>
+        </div>
+        
+        <!-- 教程面板 -->
+        <div class="panel active" id="tutorial-panel">
+            <div class="warning-banner">
+                <span class="icon">⚠️</span>
+                <div>
+                    <strong>紧急声明</strong><br>
+                    本程序仅供学习培训使用。遇到真实紧急情况，请立即拨打当地急救电话（如 120）！
+                </div>
+            </div>
+            
+            <div class="tutorial-section">
+                <h2>🫀 心肺复苏 (CPR) 基础</h2>
+                
+                <h3>什么是CPR？</h3>
+                <p>心肺复苏（Cardiopulmonary Resuscitation）是在心脏骤停时，通过胸外按压和人工呼吸维持血液循环和氧气供应的急救技术。</p>
+                
+                <div class="highlight-box">
+                    <strong>黄金4分钟</strong>：心脏骤停后4分钟内开始CPR，患者存活率可提高 2-3 倍！
+                </div>
+                
+                <h3>CPR操作步骤（C-A-B）</h3>
+                <ul class="step-list">
+                    <li>
+                        <strong>确保安全</strong><br>
+                        确认现场安全，轻拍患者双肩并大声呼喊："您怎么了？"检查是否有意识和呼吸。
+                    </li>
+                    <li>
+                        <strong>呼叫帮助</strong><br>
+                        大声呼救，让旁人拨打急救电话（120）并寻找AED。
+                    </li>
+                    <li>
+                        <strong>胸外按压 (C - Compressions)</strong><br>
+                        • 位置：胸骨下半部（两乳头连线中点）<br>
+                        • 深度：5-6厘米（成人）<br>
+                        • 频率：100-120次/分钟<br>
+                        • 手臂伸直，垂直下压，让胸廓完全回弹
+                    </li>
+                    <li>
+                        <strong>开放气道 (A - Airway)</strong><br>
+                        仰头抬颏法：一手压额头，一手抬下巴，使气道开放。
+                    </li>
+                    <li>
+                        <strong>人工呼吸 (B - Breathing)</strong><br>
+                        捏住鼻子，口对口吹气2次，每次1秒，看到胸廓抬起即可。
+                    </li>
+                    <li>
+                        <strong>循环进行</strong><br>
+                        30次按压 + 2次人工呼吸为一个周期，持续进行直到专业救援到达。
+                    </li>
+                </ul>
+                
+                <div class="tip-box">
+                    如果不愿意或不能进行口对口人工呼吸，可以只做胸外按压（Hands-Only CPR），同样有效！
+                </div>
+            </div>
+            
+            <div class="tutorial-section">
+                <h2>⚡ 自动体外除颤器 (AED)</h2>
+                
+                <h3>什么是AED？</h3>
+                <p>AED是一种便携式医疗设备，可以自动分析心律并在需要时给予电击除颤，是抢救心脏骤停患者的关键设备。</p>
+                
+                <div class="highlight-box">
+                    <strong>关键点</strong>：AED不会电击正常人！只有检测到可除颤心律时才会建议电击。
+                </div>
+                
+                <h3>AED使用步骤</h3>
+                <ul class="step-list">
+                    <li>
+                        <strong>开机</strong><br>
+                        打开AED电源，立即按照语音提示操作。
+                    </li>
+                    <li>
+                        <strong>贴电极片</strong><br>
+                        • 右电极：右锁骨下方<br>
+                        • 左电极：左乳头外侧（心尖部）<br>
+                        确保电极片与皮肤紧密接触
+                    </li>
+                    <li>
+                        <strong>分析心律</strong><br>
+                        AED会自动分析心律，此时所有人不要接触患者！
+                    </li>
+                    <li>
+                        <strong>电击除颤（如需要）</strong><br>
+                        确认无人接触患者后，按下闪烁的放电按钮。
+                    </li>
+                    <li>
+                        <strong>继续CPR</strong><br>
+                        电击后立即开始心肺复苏，AED会每2分钟再次分析。
+                    </li>
+                </ul>
+                
+                <div class="tip-box">
+                    AED设计简单，即使是非专业人员也能安全使用。记住：打开电源，听语音指令，跟着做就行！
+                </div>
+            </div>
+            
+            <div class="tutorial-section">
+                <h2>🎯 按压质量指标</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">5-6cm</div>
+                        <div class="stat-label">按压深度</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">100-120</div>
+                        <div class="stat-label">每分钟按压次数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">30:2</div>
+                        <div class="stat-label">按压:通气比例</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value"><10s</div>
+                        <div class="stat-label">中断时间</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CPR模拟面板 -->
+        <div class="panel" id="cpr-sim-panel">
+            <div class="simulator-container">
+                <div class="sim-main">
+                    <div class="flow-indicator">
+                        <div class="flow-step active" data-step="1">
+                            <div class="icon">👐</div>
+                            <div>定位</div>
+                        </div>
+                        <div class="flow-step" data-step="2">
+                            <div class="icon">💪</div>
+                            <div>按压</div>
+                        </div>
+                        <div class="flow-step" data-step="3">
+                            <div class="icon">🫁</div>
+                            <div>通气</div>
+                        </div>
+                        <div class="flow-step" data-step="4">
+                            <div class="icon">🔄</div>
+                            <div>循环</div>
+                        </div>
+                    </div>
+                    
+                    <div class="manikin-area" id="cprArea">
+                        <svg class="manikin-svg" viewBox="0 0 400 400">
+                            <!-- 身体轮廓 -->
+                            <ellipse cx="200" cy="250" rx="80" ry="100" fill="#fdbf60" opacity="0.3" />
+                            <!-- 头部 -->
+                            <circle cx="200" cy="100" r="50" fill="#fdbf60" opacity="0.5" />
+                            <!-- 胸部区域 -->
+                            <ellipse cx="200" cy="220" rx="60" ry="50" fill="#e74c3c" opacity="0.2" class="compression-zone" id="chestZone"/>
+                            <!-- 按压位置标记 -->
+                            <circle cx="200" cy="200" r="25" fill="none" stroke="#e74c3c" stroke-width="3" stroke-dasharray="5,5" class="compression-target"/>
+                            <text x="200" y="205" text-anchor="middle" fill="#e74c3c" font-size="12" font-weight="bold">按压这里</text>
+                            <!-- 双手按压动画 -->
+                            <g id="hands" opacity="0">
+                                <rect x="170" y="170" width="25" height="40" rx="5" fill="#fdbf60"/>
+                                <rect x="205" y="170" width="25" height="40" rx="5" fill="#fdbf60"/>
+                            </g>
+                        </svg>
+                    </div>
+                    
+                    <div class="voice-bubble" id="cprVoice" style="display: none;">
+                        请点击胸部中央开始按压
+                    </div>
+                    
+                    <div class="metronome" id="metronome">
+                        <div class="beat"></div>
+                        <div class="beat"></div>
+                        <div class="beat"></div>
+                        <div class="beat"></div>
+                    </div>
+                    
+                    <div class="control-buttons">
+                        <button class="btn btn-primary" id="startCPR">▶ 开始练习</button>
+                        <button class="btn btn-secondary" id="resetCPR">↺ 重置</button>
+                        <button class="btn btn-success" id="breathBtn" disabled>🫁 人工呼吸 (2次)</button>
+                    </div>
+                </div>
+                
+                <div class="sim-sidebar">
+                    <div class="status-panel">
+                        <div class="status-indicator waiting" id="statusIndicator">⏸️</div>
+                        <div class="timer-display" id="cprTimer">00:00</div>
+                        <div class="bpm-display" id="bpmDisplay">-- BPM</div>
+                    </div>
+                    
+                    <div class="status-panel">
+                        <h3>按压深度</h3>
+                        <div class="depth-meter">
+                            <div class="depth-bar">
+                                <div class="depth-fill" id="depthFill"></div>
+                            </div>
+                            <div class="depth-labels">
+                                <span>太浅</span>
+                                <span>5-6cm✓</span>
+                                <span>太深</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <div>本次按压: <span id="currentDepth">--</span> mm</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-panel">
+                        <h3>统计数据</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="totalCompressions">0</div>
+                                <div class="stat-label">总按压数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="goodCompressions">0</div>
+                                <div class="stat-label">合格次数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="compressionRate">0%</div>
+                                <div class="stat-label">合格率</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="cyclesCompleted">0</div>
+                                <div class="stat-label">完成循环</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AED模拟面板 -->
+        <div class="panel" id="aed-sim-panel">
+            <div class="simulator-container">
+                <div class="sim-main">
+                    <div class="flow-indicator">
+                        <div class="flow-step active" data-step="1">
+                            <div class="icon">🔌</div>
+                            <div>开机</div>
+                        </div>
+                        <div class="flow-step" data-step="2">
+                            <div class="icon">📋</div>
+                            <div>贴片</div>
+                        </div>
+                        <div class="flow-step" data-step="3">
+                            <div class="icon">📊</div>
+                            <div>分析</div>
+                        </div>
+                        <div class="flow-step" data-step="4">
+                            <div class="icon">⚡</div>
+                            <div>电击</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 30px; flex-wrap: wrap; justify-content: center;">
+                        <div class="aed-device">
+                            <div class="aed-screen" id="aedScreen">
+                                <div class="aed-message" id="aedMessage">请按下电源键开机</div>
+                            </div>
+                            
+                            <div class="aed-pads">
+                                <div class="pad" id="rightPad" data-label="右" data-position="right">
+                                    右锁骨下
+                                </div>
+                                <div class="pad" id="leftPad" data-label="左" data-position="left">
+                                    左胸外侧
+                                </div>
+                            </div>
+                            
+                            <button class="aed-button power" id="aedPowerBtn">⏻ 电源</button>
+                            
+                            <button class="aed-button shock" id="shockBtn" disabled>
+                                ⚡ 电击（未就绪）
+                            </button>
+                        </div>
+                        
+                        <div class="manikin-area" style="flex: 1; min-width: 300px; max-width: 400px;">
+                            <svg class="manikin-svg" viewBox="0 0 300 400" id="aedManikin">
+                                <!-- 身体 -->
+                                <ellipse cx="150" cy="250" rx="70" ry="90" fill="#fdbf60" opacity="0.3" />
+                                
+                                <!-- 胸部区域 -->
+                                <ellipse cx="150" cy="220" rx="50" ry="40" fill="#e74c3c" opacity="0.1" />
+                                
+                                <!-- 右贴片位置（锁骨下）-->
+                                <rect x="180" y="160" width="40" height="60" rx="5" fill="#fff" opacity="0.2" stroke="#fff" stroke-dasharray="3,3" class="pad-target" data-target="right"/>
+                                <text x="200" y="195" text-anchor="middle" fill="#fff" font-size="10">右贴片</text>
+                                
+                                <!-- 左贴片位置（心尖）-->
+                                <rect x="80" y="230" width="40" height="60" rx="5" fill="#fff" opacity="0.2" stroke="#fff" stroke-dasharray="3,3" class="pad-target" data-target="left"/>
+                                <text x="100" y="265" text-anchor="middle" fill="#fff" font-size="10">左贴片</text>
+                                
+                                <!-- 放置的电极片 -->
+                                <g id="placedPads"></g>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="voice-bubble" id="aedVoice" style="display: none;">
+                        欢迎使用AED训练器
+                    </div>
+                    
+                    <div class="control-buttons">
+                        <button class="btn btn-secondary" id="resetAED">↺ 重置训练</button>
+                    </div>
+                </div>
+                
+                <div class="sim-sidebar">
+                    <div class="status-panel">
+                        <h3>操作指南</h3>
+                        <div id="aedGuide" style="text-align: left; margin-top: 15px;">
+                            <div style="margin-bottom: 10px;">🔴 第1步：按下电源键开机</div>
+                            <div style="color: #666; margin-bottom: 10px;">🟡 第2步：按照提示贴电极片</div>
+                            <div style="color: #666; margin-bottom: 10px;">🟡 第3步：等待分析心律</div>
+                            <div style="color: #666;">🟡 第4步：如有需要，按下电击按钮</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-panel">
+                        <h3>AED知识</h3>
+                        <div style="text-align: left; font-size: 0.9em;">
+                            <p style="margin-bottom: 10px;"><strong>✓ AED不会电击正常心跳</strong></p>
+                            <p style="margin-bottom: 10px;"><strong>✓ 可以在水中使用吗？</strong> 需要擦干胸部</p>
+                            <p style="margin-bottom: 10px;"><strong>✓ 有起搏器怎么办？</strong> 贴片远离起搏器位置</p>
+                            <p><strong>✓ 儿童可以使用吗？</strong> 使用儿童贴片或模式</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 完整流程面板 -->
+        <div class="panel" id="full-sim-panel">
+            <div class="tutorial-section">
+                <h2>🚨 完整急救流程演练</h2>
+                
+                <p>这个模拟器将引导你完成从发现患者到使用AED的完整急救流程。</p>
+                
+                <div class="flow-indicator" style="background: rgba(231, 76, 60, 0.1);">
+                    <div class="flow-step" data-step="scene">
+                        <div class="icon">👁️</div>
+                        <div>评估现场</div>
+                    </div>
+                    <div class="flow-step" data-step="response">
+                        <div class="icon">📞</div>
+                        <div>呼叫救援</div>
+                    </div>
+                    <div class="flow-step" data-step="cpr">
+                        <div class="icon">🫀</div>
+                        <div>开始CPR</div>
+                    </div>
+                    <div class="flow-step" data-step="aed">
+                        <div class="icon">⚡</div>
+                        <div>使用AED</div>
+                    </div>
+                    <div class="flow-step" data-step="continue">
+                        <div class="icon">🔄</div>
+                        <div>持续急救</div>
+                    </div>
+                </div>
+                
+                <div id="fullSimContainer">
+                    <div style="text-align: center; padding: 50px;">
+                        <div style="font-size: 4em; margin-bottom: 20px;">🚨</div>
+                        <h3>场景模拟</h3>
+                        <p style="margin: 20px 0; color: #888;">
+                            你正在公园散步，突然发现前方有一名男子倒在地上...
+                        </p>
+                        
+                        <button class="btn btn-primary" id="startFullSim" style="font-size: 1.2em; padding: 15px 40px;">
+                            开始模拟演练
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="fullSimProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="simProgressBar"></div>
+                    </div>
+                    
+                    <div class="voice-bubble" id="fullSimVoice">
+                        请走近患者，评估现场安全
+                    </div>
+                    
+                    <div id="simChoices" style="margin-top: 20px;">
+                        <!-- 动态生成选项 -->
+                    </div>
+                </div>
+                
+                <div id="simComplete" style="display: none; text-align: center; padding: 40px;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">✅</div>
+                    <h3>演练完成！</h3>
+                    <p style="margin: 20px 0; color: #888;">你已完成了完整的急救流程演练。</p>
+                    
+                    <div class="stats-grid" style="max-width: 600px; margin: 30px auto;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="simScore">100</div>
+                            <div class="stat-label">得分</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="simTime">03:45</div>
+                            <div class="stat-label">用时</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="restartFullSim">再来一次</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 标签切换 ==========
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(`${tab}-panel`).classList.add('active');
+            });
+        });
+        
+        // ========== 语音合成 ==========
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        // ========== CPR模拟器 ==========
+        class CPRSimulator {
+            constructor() {
+                this.isRunning = false;
+                this.compressions = 0;
+                this.goodCompressions = 0;
+                this.cycles = 0;
+                this.lastCompressionTime = 0;
+                this.recentIntervals = [];
+                this.timer = null;
+                this.seconds = 0;
+                this.metronomeInterval = null;
+                this.currentBeat = 0;
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                const chestZone = document.getElementById('chestZone');
+                
+                // 鼠标按下模拟按压开始
+                chestZone.addEventListener('mousedown', (e) => this.startCompression(e));
+                chestZone.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.startCompression(e);
+                });
+                
+                // 鼠标松开模拟按压结束
+                chestZone.addEventListener('mouseup', () => this.endCompression());
+                chestZone.addEventListener('touchend', () => this.endCompression());
+                chestZone.addEventListener('mouseleave', () => this.endCompression());
+                
+                document.getElementById('startCPR').addEventListener('click', () => this.start());
+                document.getElementById('resetCPR').addEventListener('click', () => this.reset());
+                document.getElementById('breathBtn').addEventListener('click', () => this.doBreaths());
+            }
+            
+            start() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.showVoice("开始心肺复苏。请按照节拍进行胸外按压，深度5-6厘米。");
+                
+                document.getElementById('startCPR').disabled = true;
+                document.getElementById('statusIndicator').className = 'status-indicator cpr';
+                document.getElementById('statusIndicator').textContent = '🫀';
+                
+                // 开始计时
+                this.timer = setInterval(() => {
+                    this.seconds++;
+                    const mins = Math.floor(this.seconds / 60).toString().padStart(2, '0');
+                    const secs = (this.seconds % 60).toString().padStart(2, '0');
+                    document.getElementById('cprTimer').textContent = `${mins}:${secs}`;
+                }, 1000);
+                
+                // 开始节拍器 (100-120 BPM = 每拍500-600ms)
+                this.startMetronome();
+                
+                // 显示人工呼吸按钮
+                if (this.compressions >= 30) {
+                    document.getElementById('breathBtn').disabled = false;
+                }
+            }
+            
+            startMetronome() {
+                const beatInterval = 600; // ~100 BPM
+                this.metronomeInterval = setInterval(() => {
+                    this.currentBeat = (this.currentBeat + 1) % 4;
+                    this.updateMetronome();
+                }, beatInterval);
+            }
+            
+            updateMetronome() {
+                const beats = document.querySelectorAll('.beat');
+                beats.forEach((beat, i) => {
+                    beat.classList.toggle('active', i === this.currentBeat);
+                });
+            }
+            
+            startCompression(e) {
+                if (!this.isRunning) return;
+                
+                this.compressionStartTime = Date.now();
+                
+                // 显示按压手
+                document.getElementById('hands').style.opacity = '1';
+                document.getElementById('hands').setAttribute('transform', 'translate(0, 10)');
+                
+                // 计算"深度"（基于按住时间模拟）
+                this.compressionTimer = setInterval(() => {
+                    const holdTime = Date.now() - this.compressionStartTime;
+                    // 模拟深度显示（视觉反馈）
+                    const simulatedDepth = Math.min(50 + holdTime / 10, 70);
+                    this.updateDepthMeter(simulatedDepth);
+                }, 50);
+            }
+            
+            endCompression() {
+                if (!this.compressionStartTime) return;
+                
+                clearInterval(this.compressionTimer);
+                
+                const holdTime = Date.now() - this.compressionStartTime;
+                const depth = Math.min(50 + holdTime / 8, 75); // 模拟深度 50-75mm
+                
+                // 判断按压质量
+                const isGood = depth >= 50 && depth <= 65;
+                
+                this.compressions++;
+                if (isGood) this.goodCompressions++;
+                
+                // 更新BPM计算
+                const now = Date.now();
+                if (this.lastCompressionTime > 0) {
+                    const interval = now - this.lastCompressionTime;
+                    this.recentIntervals.push(interval);
+                    if (this.recentIntervals.length > 5) this.recentIntervals.shift();
+                    
+                    if (this.recentIntervals.length >= 3) {
+                        const avgInterval = this.recentIntervals.reduce((a, b) => a + b) / this.recentIntervals.length;
+                        const bpm = Math.round(60000 / avgInterval);
+                        document.getElementById('bpmDisplay').textContent = `${bpm} BPM`;
+                        
+                        // BPM反馈
+                        if (bpm < 100) {
+                            document.getElementById('bpmDisplay').style.color = '#f39c12';
+                        } else if (bpm > 120) {
+                            document.getElementById('bpmDisplay').style.color = '#e74c3c';
+                        } else {
+                            document.getElementById('bpmDisplay').style.color = '#27ae60';
+                        }
+                    }
+                }
+                this.lastCompressionTime = now;
+                
+                // 更新显示
+                this.updateDepthMeter(depth, isGood);
+                document.getElementById('currentDepth').textContent = Math.round(depth);
+                document.getElementById('currentDepth').style.color = isGood ? '#27ae60' : '#f39c12';
+                
+                this.updateStats();
+                
+                // 隐藏按压手
+                document.getElementById('hands').style.opacity = '0';
+                
+                // 检查是否该人工呼吸了
+                if (this.compressions >= 30) {
+                    document.getElementById('breathBtn').disabled = false;
+                    if (this.compressions === 30) {
+                        this.showVoice("已完成30次按压，请进行2次人工呼吸");
+                    }
+                }
+                
+                this.compressionStartTime = null;
+            }
+            
+            updateDepthMeter(depth, isGood = false) {
+                const fill = document.getElementById('depthFill');
+                const percentage = Math.min((depth / 70) * 100, 100);
+                fill.style.width = `${percentage}%`;
+                fill.classList.toggle('good', isGood);
+            }
+            
+            doBreaths() {
+                this.showVoice("进行人工呼吸... 捏住鼻子，口对口吹气2次");
+                
+                // 模拟2次呼吸
+                let breathCount = 0;
+                const doBreath = () => {
+                    breathCount++;
+                    document.getElementById('statusIndicator').textContent = '🫁';
+                    
+                    setTimeout(() => {
+                        document.getElementById('statusIndicator').textContent = '🫀';
+                        
+                        if (breathCount < 2) {
+                            setTimeout(doBreath, 500);
+                        } else {
+                            this.cycles++;
+                            this.compressions = 0;
+                            document.getElementById('breathBtn').disabled = true;
+                            this.showVoice("继续胸外按压");
+                            this.updateStats();
+                        }
+                    }, 1000);
+                };
+                
+                doBreath();
+            }
+            
+            updateStats() {
+                document.getElementById('totalCompressions').textContent = this.compressions + (this.cycles * 30);
+                document.getElementById('goodCompressions').textContent = this.goodCompressions;
+                document.getElementById('cyclesCompleted').textContent = this.cycles;
+                
+                const rate = this.compressions > 0 ? Math.round((this.goodCompressions / this.compressions) * 100) : 0;
+                document.getElementById('compressionRate').textContent = `${rate}%`;
+            }
+            
+            showVoice(text) {
+                const bubble = document.getElementById('cprVoice');
+                bubble.textContent = text;
+                bubble.style.display = 'block';
+                speak(text);
+            }
+            
+            reset() {
+                this.isRunning = false;
+                this.compressions = 0;
+                this.goodCompressions = 0;
+                this.cycles = 0;
+                this.seconds = 0;
+                this.recentIntervals = [];
+                this.lastCompressionTime = 0;
+                
+                clearInterval(this.timer);
+                clearInterval(this.metronomeInterval);
+                
+                document.getElementById('startCPR').disabled = false;
+                document.getElementById('breathBtn').disabled = true;
+                document.getElementById('statusIndicator').className = 'status-indicator waiting';
+                document.getElementById('statusIndicator').textContent = '⏸️';
+                document.getElementById('cprTimer').textContent = '00:00';
+                document.getElementById('bpmDisplay').textContent = '-- BPM';
+                document.getElementById('bpmDisplay').style.color = '#e74c3c';
+                document.getElementById('cprVoice').style.display = 'none';
+                document.getElementById('depthFill').style.width = '0%';
+                document.getElementById('currentDepth').textContent = '--';
+                document.getElementById('currentDepth').style.color = '#fff';
+                
+                document.querySelectorAll('.beat').forEach(b => b.classList.remove('active'));
+                
+                this.updateStats();
+            }
+        }
+        
+        // ========== AED模拟器 ==========
+        class AEDSimulator {
+            constructor() {
+                this.step = 0; // 0: 关机, 1: 开机, 2: 贴片, 3: 分析, 4: 可电击
+                this.padsPlaced = { right: false, left: false };
+                this.selectedPad = null;
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('aedPowerBtn').addEventListener('click', () => this.powerOn());
+                document.getElementById('shockBtn').addEventListener('click', () => this.deliverShock());
+                document.getElementById('resetAED').addEventListener('click', () => this.reset());
+                
+                // 电极片拖拽
+                document.querySelectorAll('.pad').forEach(pad => {
+                    pad.addEventListener('mousedown', (e) => this.startDragPad(e, pad));
+                    pad.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        this.startDragPad(e, pad);
+                    });
+                });
+                
+                // 贴片目标区域
+                document.querySelectorAll('.pad-target').forEach(target => {
+                    target.addEventListener('mouseup', (e) => this.dropPad(e, target));
+                    target.addEventListener('touchend', (e) => this.dropPad(e, target));
+                });
+            }
+            
+            powerOn() {
+                if (this.step > 0) return;
+                
+                this.step = 1;
+                document.getElementById('aedScreen').classList.add('active');
+                this.updateMessage("系统启动中...", true);
+                
+                setTimeout(() => {
+                    this.updateMessage("请按照图示粘贴电极片", true);
+                    this.speak("AED已开机。请按照图示粘贴电极片。");
+                    this.updateGuide(2);
+                }, 1500);
+            }
+            
+            startDragPad(e, pad) {
+                if (this.step < 1) return;
+                
+                this.selectedPad = pad.dataset.position;
+                pad.style.opacity = '0.5';
+            }
+            
+            dropPad(e, target) {
+                if (!this.selectedPad) return;
+                
+                const targetPosition = target.dataset.target;
+                
+                if (this.selectedPad === targetPosition) {
+                    // 正确放置
+                    this.padsPlaced[targetPosition] = true;
+                    
+                    const pad = document.querySelector(`.pad[data-position="${targetPosition}"]`);
+                    pad.classList.add('placed');
+                    pad.style.opacity = '1';
+                    
+                    // 在人体上显示贴片
+                    this.showPadOnBody(targetPosition);
+                    
+                    this.speak(`${targetPosition === 'right' ? '右' : '左'}侧电极片已粘贴。`);
+                    
+                    // 检查是否都放置好了
+                    if (this.padsPlaced.right && this.padsPlaced.left) {
+                        this.step = 3;
+                        this.updateGuide(3);
+                        setTimeout(() => this.analyze(), 500);
+                    }
+                } else {
+                    // 错误放置
+                    this.speak("请粘贴在正确位置");
+                    document.querySelector(`.pad[data-position="${this.selectedPad}"]`).style.opacity = '1';
+                }
+                
+                this.selectedPad = null;
+            }
+            
+            showPadOnBody(position) {
+                const svg = document.getElementById('placedPads');
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                
+                if (position === 'right') {
+                    rect.setAttribute('x', '180');
+                    rect.setAttribute('y', '160');
+                } else {
+                    rect.setAttribute('x', '80');
+                    rect.setAttribute('y', '230');
+                }
+                
+                rect.setAttribute('width', '40');
+                rect.setAttribute('height', '60');
+                rect.setAttribute('rx', '5');
+                rect.setAttribute('fill', '#e74c3c');
+                rect.setAttribute('opacity', '0.8');
+                
+                svg.appendChild(rect);
+            }
+            
+            analyze() {
+                document.getElementById('aedScreen').className = 'aed-screen analyzing';
+                this.updateMessage("正在分析心律...", true);
+                this.speak("正在分析心律，请不要接触患者。");
+                
+                setTimeout(() => {
+                    // 模拟需要电击
+                    this.step = 4;
+                    document.getElementById('aedScreen').className = 'aed-screen shock';
+                    this.updateMessage("建议电击", false, true);
+                    this.speak("建议电击。正在充电，请离开患者。");
+                    
+                    setTimeout(() => {
+                        document.getElementById('shockBtn').disabled = false;
+                        document.getElementById('shockBtn').textContent = '⚡ 按下电击';
+                        this.speak("请按下闪烁的电击按钮。");
+                        this.updateGuide(4);
+                    }, 2000);
+                }, 3000);
+            }
+            
+            deliverShock() {
+                if (this.step !== 4) return;
+                
+                this.speak("电击已释放。立即开始心肺复苏。");
+                this.updateMessage("电击已释放\n开始心肺复苏", false, true);
+                
+                document.getElementById('shockBtn').disabled = true;
+                document.getElementById('shockBtn').textContent = '⚡ 电击完成';
+                
+                // 闪烁效果
+                const screen = document.getElementById('aedScreen');
+                screen.style.background = '#fff';
+                setTimeout(() => {
+                    screen.style.background = '#000';
+                    document.getElementById('aedScreen').className = 'aed-screen active';
+                }, 100);
+                
+                setTimeout(() => {
+                    screen.style.background = '#fff';
+                }, 200);
+                
+                setTimeout(() => {
+                    screen.style.background = '#000';
+                }, 300);
+                
+                this.step = 5;
+            }
+            
+            updateMessage(text, animate = false, large = false) {
+                const msg = document.getElementById('aedMessage');
+                msg.textContent = text;
+                msg.classList.toggle('large', large);
+                
+                if (animate) {
+                    msg.style.animation = 'none';
+                    setTimeout(() => msg.style.animation = 'speak 0.3s', 10);
+                }
+            }
+            
+            updateGuide(step) {
+                const guide = document.getElementById('aedGuide');
+                const steps = [
+                    '🔴 第1步：按下电源键开机',
+                    '🟡 第2步：按照提示贴电极片',
+                    '🟡 第3步：等待分析心律',
+                    '🟡 第4步：如有需要，按下电击按钮'
+                ];
+                
+                let html = '';
+                steps.forEach((s, i) => {
+                    const color = i + 1 === step ? '#e74c3c' : (i + 1 < step ? '#666' : '#444');
+                    html += `<div style="margin-bottom: 10px; color: ${color};">${s}</div>`;
+                });
+                
+                guide.innerHTML = html;
+            }
+            
+            speak(text) {
+                const bubble = document.getElementById('aedVoice');
+                bubble.textContent = text;
+                bubble.style.display = 'block';
+                speak(text);
+            }
+            
+            reset() {
+                this.step = 0;
+                this.padsPlaced = { right: false, left: false };
+                this.selectedPad = null;
+                
+                document.getElementById('aedScreen').className = 'aed-screen';
+                document.getElementById('aedMessage').textContent = '请按下电源键开机';
+                document.getElementById('aedMessage').classList.remove('large');
+                document.getElementById('shockBtn').disabled = true;
+                document.getElementById('shockBtn').textContent = '⚡ 电击（未就绪）';
+                document.getElementById('placedPads').innerHTML = '';
+                document.getElementById('aedVoice').style.display = 'none';
+                
+                document.querySelectorAll('.pad').forEach(pad => {
+                    pad.classList.remove('placed');
+                    pad.style.opacity = '1';
+                });
+                
+                this.updateGuide(1);
+            }
+        }
+        
+        // ========== 完整流程模拟 ==========
+        class FullSimScenario {
+            constructor() {
+                this.step = 0;
+                this.score = 100;
+                this.startTime = null;
+                this.scenario = [
+                    {
+                        id: 'scene',
+                        question: "你走到患者身边，应该首先做什么？",
+                        options: [
+                            { text: "立即开始胸外按压", correct: false, feedback: "应该先确认现场安全并检查患者反应" },
+                            { text: "评估现场安全，轻拍患者双肩", correct: true, feedback: "正确！首先要确保现场安全" },
+                            { text: "直接拨打120", correct: false, feedback: "应该先确认患者情况" }
+                        ],
+                        voice: "你走到患者身边，请评估现场安全并检查患者反应。"
+                    },
+                    {
+                        id: 'response',
+                        question: "患者无意识、无呼吸，你应该：",
+                        options: [
+                            { text: "立即开始CPR", correct: false, feedback: "应该先呼叫帮助" },
+                            { text: "大声呼救并让旁人拨打120和寻找AED", correct: true, feedback: "正确！及时呼救很重要" },
+                            { text: "等待专业救援", correct: false, feedback: "黄金时间很短，必须立即行动" }
+                        ],
+                        voice: "患者没有反应，请立即大声呼救。"
+                    },
+                    {
+                        id: 'cpr',
+                        question: "开始CPR，按压位置在哪里？",
+                        options: [
+                            { text: "胸骨下半部，两乳头连线中点", correct: true, feedback: "正确！这是标准按压位置" },
+                            { text: "左侧胸部", correct: false, feedback: "应该在胸部中央" },
+                            { text: "腹部", correct: false, feedback: "这是错误位置" }
+                        ],
+                        voice: "请开始胸外按压，按压胸骨下半部，深度5到6厘米。"
+                    },
+                    {
+                        id: 'aed',
+                        question: "AED到位了，你应该：",
+                        options: [
+                            { text: "继续使用CPR，等医生来了再用AED", correct: false, feedback: "应该立即使用AED" },
+                            { text: "立即开机并按照语音提示操作", correct: true, feedback: "正确！越早使用AED越好" },
+                            { text: "先完成30次按压再用AED", correct: false, feedback: "AED到达应立即使用" }
+                        ],
+                        voice: "AED已到达，请立即打开电源。"
+                    },
+                    {
+                        id: 'continue',
+                        question: "电击后应该：",
+                        options: [
+                            { text: "等待AED下一次分析", correct: false, feedback: "电击后应立即恢复CPR" },
+                            { text: "立即恢复心肺复苏", correct: true, feedback: "正确！电击后立即开始CPR" },
+                            { text: "检查患者是否醒了", correct: false, feedback: "不应该中断按压" }
+                        ],
+                        voice: "电击完成，请立即恢复心肺复苏。"
+                    }
+                ];
+                
+                document.getElementById('startFullSim').addEventListener('click', () => this.start());
+                document.getElementById('restartFullSim').addEventListener('click', () => this.restart());
+            }
+            
+            start() {
+                document.getElementById('fullSimContainer').style.display = 'none';
+                document.getElementById('fullSimProgress').style.display = 'block';
+                this.startTime = Date.now();
+                this.showStep();
+            }
+            
+            showStep() {
+                if (this.step >= this.scenario.length) {
+                    this.complete();
+                    return;
+                }
+                
+                const current = this.scenario[this.step];
+                
+                // 更新进度条
+                const progress = ((this.step) / this.scenario.length) * 100;
+                document.getElementById('simProgressBar').style.width = `${progress}%`;
+                
+                // 更新流程指示器
+                document.querySelectorAll('.flow-step').forEach((el, i) => {
+                    el.classList.remove('active', 'completed');
+                    if (i < this.step) el.classList.add('completed');
+                    if (i === this.step) el.classList.add('active');
+                });
+                
+                // 语音
+                document.getElementById('fullSimVoice').textContent = current.voice;
+                speak(current.voice);
+                
+                // 生成选项
+                const choicesDiv = document.getElementById('simChoices');
+                choicesDiv.innerHTML = `<h3 style="margin-bottom: 15px;">${current.question}</h3>`;
+                
+                current.options.forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary';
+                    btn.style.cssText = 'display: block; width: 100%; margin-bottom: 10px; text-align: left;';
+                    btn.textContent = `${String.fromCharCode(65 + i)}. ${opt.text}`;
+                    btn.onclick = () => this.selectOption(i);
+                    choicesDiv.appendChild(btn);
+                });
+            }
+            
+            selectOption(index) {
+                const current = this.scenario[this.step];
+                const option = current.options[index];
+                
+                if (!option.correct) {
+                    this.score -= 20;
+                    alert(option.feedback);
+                } else {
+                    speak(option.feedback);
+                }
+                
+                this.step++;
+                this.showStep();
+            }
+            
+            complete() {
+                document.getElementById('fullSimProgress').style.display = 'none';
+                document.getElementById('simComplete').style.display = 'block';
+                
+                document.getElementById('simScore').textContent = Math.max(this.score, 0);
+                
+                const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const secs = (elapsed % 60).toString().padStart(2, '0');
+                document.getElementById('simTime').textContent = `${mins}:${secs}`;
+                
+                speak(`演练完成。你的得分是${Math.max(this.score, 0)}分。`);
+            }
+            
+            restart() {
+                this.step = 0;
+                this.score = 100;
+                this.startTime = null;
+                document.getElementById('simComplete').style.display = 'none';
+                document.getElementById('fullSimContainer').style.display = 'block';
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            new CPRSimulator();
+            new AEDSimulator();
+            new FullSimScenario();
+        });
+    </script>
+</body>
+</html>

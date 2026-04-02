@@ -1,0 +1,2160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💧 水分子三态变化与扩散演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0a0a2e 0%, #1a1a4e 50%, #0a1a3e 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(0,150,255,0.15), rgba(100,150,255,0.15));
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 {
+            font-size: 2.2em;
+            background: linear-gradient(90deg, #00aaff, #66ccff, #88ddff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #aac;
+            margin-top: 8px;
+        }
+
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(0,150,255,0.2);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #00aaff, #0088cc);
+            box-shadow: 0 4px 15px rgba(0,170,255,0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 主布局 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 25px;
+        }
+
+        @media (max-width: 1000px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 画布容器 */
+        .canvas-container {
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            padding: 20px;
+            min-height: 500px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 15px;
+        }
+
+        /* 控件 */
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .control-group {
+            background: rgba(255,255,255,0.05);
+            padding: 12px 18px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-size: 0.9em;
+            color: #aac;
+            white-space: nowrap;
+        }
+
+        select, input[type="range"] {
+            padding: 8px 14px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        select option {
+            background: #1a1a4e;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            accent-color: #00aaff;
+        }
+
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00aaff, #0088cc);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* 信息面板 */
+        .info-panel {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 20px;
+            max-height: 560px;
+            overflow-y: auto;
+        }
+
+        .info-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .info-panel::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        h2 {
+            color: #66ccff;
+            margin: 18px 0 12px;
+            font-size: 1.15em;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(100,200,255,0.3);
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #88aacc;
+            margin: 12px 0 8px;
+            font-size: 1em;
+        }
+
+        p, li {
+            color: #bbc;
+            line-height: 1.7;
+            font-size: 0.9em;
+        }
+
+        ul {
+            padding-left: 18px;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        .highlight {
+            background: rgba(0,170,255,0.2);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .formula {
+            background: rgba(0,0,0,0.3);
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-family: 'Times New Roman', serif;
+            text-align: center;
+            margin: 12px 0;
+            border-left: 3px solid #00aaff;
+        }
+
+        /* 状态指示器 */
+        .state-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .state-dot {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .state-dot:hover {
+            transform: scale(1.1);
+        }
+
+        .state-dot.active {
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(0,170,255,0.5);
+        }
+
+        .state-dot .icon {
+            font-size: 1.5em;
+        }
+
+        .ice { background: linear-gradient(135deg, #aaeeff, #88ccdd); color: #333; }
+        .water { background: linear-gradient(135deg, #4488ff, #2266dd); color: #fff; }
+        .steam { background: linear-gradient(135deg, #ffaacc, #ff8899); color: #333; }
+
+        /* 温度计 */
+        .thermometer {
+            width: 30px;
+            height: 150px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            margin: 0 auto 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thermometer-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #ff4444, #ffaa00, #44ff44, #4488ff);
+            border-radius: 15px;
+            transition: height 0.5s;
+        }
+
+        .thermometer-scale {
+            position: absolute;
+            right: 35px;
+            top: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.7em;
+            color: #888;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00aaff, #88ddff);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 分子图示 */
+        .molecule-demo {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .molecule-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* 实验选择 */
+        .experiment-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .exp-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+
+        .exp-card:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .exp-card.selected {
+            border-color: #00aaff;
+            background: rgba(0,170,255,0.1);
+        }
+
+        .exp-card .icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .exp-card h4 {
+            font-size: 0.9em;
+            color: #88ccff;
+        }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+        }
+
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        /* 统计信息 */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #88ddff;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💧 水分子三态变化与扩散演示</h1>
+            <p class="subtitle">探索水的固态、液态、气态及物质扩散的科学奥秘</p>
+        </header>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: linear-gradient(135deg, #ff4444, #ff6666);"></div>
+                <span>氧原子 O</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: linear-gradient(135deg, #ffffff, #dddddd);"></div>
+                <span>氢原子 H</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: linear-gradient(135deg, #ffaa00, #ffcc44);"></div>
+                <span>溶质分子</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: linear-gradient(135deg, #44ff44, #88ff88);"></div>
+                <span>水分子 H₂O</span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('phases')">三态变化</button>
+            <button class="tab-btn" onclick="switchTab('diffusion')">水中扩散</button>
+            <button class="tab-btn" onclick="switchTab('brownian')">布朗运动</button>
+            <button class="tab-btn" onclick="switchTab('experiments')">模拟实验</button>
+        </div>
+
+        <!-- 三态变化 -->
+        <div id="phases" class="tab-content active">
+            <div class="main-grid">
+                <div class="canvas-container">
+                    <canvas id="phaseCanvas" width="650" height="450"></canvas>
+            <div class="state-indicator">
+                <div class="state-dot ice active" onclick="setPhase('ice')">
+                    <span class="icon">🧊</span>
+                    <span>冰 (-10°C)</span>
+                </div>
+                <div class="state-dot water" onclick="setPhase('water')">
+                    <span class="icon">💧</span>
+                    <span>水 (25°C)</span>
+                </div>
+                <div class="state-dot steam" onclick="setPhase('steam')">
+                    <span class="icon">💨</span>
+                    <span>水蒸气 (105°C)</span>
+                </div>
+            </div>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label>温度:</label>
+                            <input type="range" id="tempSlider" min="-20" max="120" value="-10" oninput="updateTemp()">
+                            <span id="tempValue">-10°C</span>
+                        </div>
+                        <button class="btn btn-secondary" onclick="toggleAnimation()">⚡ 动画</button>
+                        <button class="btn btn-secondary" onclick="resetSimulation()">↺ 重置</button>
+                    </div>
+                </div>
+                <div class="info-panel">
+                    <h2>💧 水的三态变化</h2>
+                    <p>水是我们生活中最常见的物质，可以以<strong class="highlight">固态</strong>、<strong class="highlight">液态</strong>和<strong class="highlight">气态</strong>三种形态存在。</p>
+
+                    <div class="thermometer">
+                        <div class="thermometer-fill" id="thermoFill" style="height: 20%;"></div>
+                    </div>
+                    <div class="thermometer-scale">
+                        <span>120°C</span>
+                        <span style="color:#ff6644;">100°C 沸点</span>
+                        <span>50°C</span>
+                        <span style="color:#88ddff;">0°C 冰点</span>
+                        <span>-20°C</span>
+                    </div>
+
+                    <h3>三态区别（标准大气压）</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0;">
+                        <div style="text-align:center;padding:10px;background:rgba(170,238,255,0.1);border-radius:8px;">
+                            <div style="font-size:1.5em;">🧊</div>
+                            <div style="font-size:0.85em;color:#aaeeff;">固态</div>
+                            <div style="font-size:0.75em;color:#888;">T < 0°C</div>
+                        </div>
+                        <div style="text-align:center;padding:10px;background:rgba(68,136,255,0.1);border-radius:8px;">
+                            <div style="font-size:1.5em;">💧</div>
+                            <div style="font-size:0.85em;color:#88aaff;">液态</div>
+                            <div style="font-size:0.75em;color:#888;">0°C < T < 100°C</div>
+                        </div>
+                        <div style="text-align:center;padding:10px;background:rgba(255,170,204,0.1);border-radius:8px;">
+                            <div style="font-size:1.5em;">💨</div>
+                            <div style="font-size:0.85em;color:#ffaacc;">气态</div>
+                            <div style="font-size:0.75em;color:#888;">T > 100°C</div>
+                        </div>
+                    </div>
+
+                    <div class="formula">
+                        冰 ⟶ 水 ⟶ 水蒸气<br>
+                        0°C (融化) 100°C (沸腾/汽化)<br>
+                        <span style="font-size:0.8em;color:#888;">标准大气压：760 mmHg (101.325 kPa)</span>
+                    </div>
+
+                    <h3>分子运动特点</h3>
+                    <ul>
+                        <li><strong>冰</strong>：分子紧密排列，振动剧烈但位置固定</li>
+                        <li><strong>水</strong>：分子间距增大，可流动但仍较紧密</li>
+                        <li><strong>水蒸气</strong>：分子间距很大，自由运动</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 水中扩散 -->
+        <div id="diffusion" class="tab-content">
+            <div class="main-grid">
+                <div class="canvas-container">
+                    <canvas id="diffusionCanvas" width="650" height="450"></canvas>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label>溶质类型:</label>
+                            <select id="soluteSelect" onchange="updateSolute()">
+                                <option value="salt">食盐 (NaCl)</option>
+                                <option value="sugar">蔗糖 (C₁₂H₂₂O₁₁)</option>
+                                <option value="food">食用色素</option>
+                                <option value="permanganate">高锰酸钾</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>温度:</label>
+                            <input type="range" id="diffTempSlider" min="10" max="90" value="25">
+                            <span id="diffTempValue">25°C</span>
+                        </div>
+                        <button class="btn btn-primary" id="diffuseBtn" onclick="startDiffusion()">▶ 开始扩散</button>
+                        <button class="btn btn-secondary" onclick="resetDiffusion()">↺ 重置</button>
+                    </div>
+                </div>
+                <div class="info-panel">
+                    <h2>🧂 物质在水中的扩散</h2>
+                    <p>扩散是<strong class="highlight">浓度梯度</strong>驱动的分子自然运动过程，物质从高浓度区域向低浓度区域移动，直至均匀分布。</p>
+
+                    <h3>扩散定律</h3>
+                    <div class="formula">
+                        菲克第一定律：J = -D × (dc/dx)<br>
+                        <span style="font-size:0.8em;color:#888;">J=扩散通量 D=扩散系数 dc/dx=浓度梯度</span>
+                    </div>
+
+                    <h3>影响扩散的因素</h3>
+                    <ul>
+                        <li><strong>温度</strong>：温度越高，分子运动越快，扩散越快</li>
+                        <li><strong>分子大小</strong>：分子越小，扩散越快</li>
+                        <li><strong>浓度差</strong>：浓度差越大，扩散速率越大</li>
+                        <li><strong>溶剂性质</strong>：粘度越高，扩散越慢</li>
+                    </ul>
+
+                    <h3>生活中常见的扩散现象</h3>
+                    <ul>
+                        <li>🌸 香水在房间里挥发</li>
+                        <li>☕ 咖啡香气扩散</li>
+                        <li>🧂 盐在汤中溶解</li>
+                        <li>💨 烟雾在空气中飘散</li>
+                    </ul>
+
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="timeElapsed">0</div>
+                            <div class="stat-label">时间 (秒)</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="spreadRadius">0</div>
+                            <div class="stat-label">扩散半径 (mm)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 布朗运动 -->
+        <div id="brownian" class="tab-content">
+            <div class="main-grid">
+                <div class="canvas-container">
+                    <canvas id="brownianCanvas" width="650" height="450"></canvas>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label>粒子大小:</label>
+                            <input type="range" id="particleSize" min="2" max="10" value="5">
+                        </div>
+                        <div class="control-group">
+                            <label>温度:</label>
+                            <input type="range" id="brownTemp" min="0" max="100" value="50">
+                            <span id="brownTempValue">50°C</span>
+                        </div>
+                        <div class="control-group">
+                            <label>放大倍数:</label>
+                            <select id="magnification">
+                                <option value="1">100x</option>
+                                <option value="2" selected>500x</option>
+                                <option value="3">1000x</option>
+                                <option value="4">2000x</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary" onclick="toggleBrownian()">⚡ 暂停/继续</button>
+                        <button class="btn btn-secondary" onclick="resetBrownian()">↺ 重置</button>
+                    </div>
+                </div>
+                <div class="info-panel">
+                    <h2>🔬 布朗运动</h2>
+                    <p>布朗运动是悬浮在液体或气体中的<strong class="highlight">微小颗粒</strong>因受到分子热运动撞击而产生的不规则运动。</p>
+
+                    <div class="formula">
+                        布朗运动 = 分子热运动 × 随机性<br>
+                        温度越高 ⟹ 运动越剧烈
+                    </div>
+
+                    <h3>历史发现</h3>
+                    <p>1827年，植物学家<strong>罗伯特·布朗</strong>用显微镜观察花粉时，发现花粉粒在水中做无规则运动，这就是著名的布朗运动。</p>
+
+                    <h3>布朗运动的规律</h3>
+                    <ul>
+                        <li>粒子越小，运动越明显</li>
+                        <li>温度越高，运动越剧烈</li>
+                        <li>运动轨迹是连续但不可预测的</li>
+                        <li>无法精确预测粒子下一秒的位置</li>
+                    </ul>
+
+                    <h3>运动轨迹分析</h3>
+                    <p>观察右侧粒子运动，记录其随机路径。虽然无法预测单个粒子的精确轨迹，但可以用统计学方法描述其整体行为。</p>
+
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="avgSpeed">0</div>
+                            <div class="stat-label">平均速度 (μm/s)</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="displacement">0</div>
+                            <div class="stat-label">总位移 (μm)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模拟实验 -->
+        <div id="experiments" class="tab-content">
+            <div class="main-grid">
+                <div class="canvas-container">
+                    <canvas id="expCanvas" width="650" height="450"></canvas>
+                    <div class="controls">
+                        <div class="experiment-cards" style="display:flex;gap:10px;">
+                            <div class="exp-card selected" onclick="selectExperiment('solution')">
+                                <div class="icon">🧪</div>
+                                <h4>溶解过程</h4>
+                            </div>
+                            <div class="exp-card" onclick="selectExperiment('osmosis')">
+                                <div class="icon">🌊</div>
+                                <h4>渗透作用</h4>
+                            </div>
+                            <div class="exp-card" onclick="selectExperiment('density')">
+                                <div class="icon">⬇️</div>
+                                <h4>密度差异</h4>
+                            </div>
+                            <div class="exp-card" onclick="selectExperiment('mixing')">
+                                <div class="icon">🌡️</div>
+                                <h4>热对流</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="controls" style="margin-top:10px;">
+                        <button class="btn btn-primary" id="expBtn" onclick="runExperiment()">▶ 运行实验</button>
+                        <button class="btn btn-secondary" id="resetExpBtn" onclick="resetExperiment()">↺ 重置</button>
+                    </div>
+            </div>
+            <div class="info-panel">
+                <h2 id="expTitle">🧪 溶解过程模拟</h2>
+                    <p id="expDesc">观察糖分子在水中的溶解过程。糖分子（sucrose）逐渐扩散到水分子中间，最终形成均匀的糖水溶液。</p>
+
+                    <h3>实验步骤</h3>
+                    <div id="expSteps">
+                        <!-- 溶解过程 -->
+                        <div id="steps-solution">
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ffaa00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">1</span>
+                                <span>将糖块放入水中</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ffaa00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">2</span>
+                                <span>糖分子从表面溶解进入水中</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ffaa00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">3</span>
+                                <span>浓度差驱动糖分子扩散</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ffaa00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">4</span>
+                                <span>最终形成均匀溶液</span>
+                            </div>
+                        </div>
+                        <!-- 渗透作用 -->
+                        <div id="steps-osmosis" style="display:none;">
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#88ccff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">1</span>
+                                <span>两侧分别放高浓度和低浓度溶液</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#88ccff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">2</span>
+                                <span>水分子可穿过半透膜</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#88ccff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">3</span>
+                                <span>水从低浓度向高浓度移动</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#88ccff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#333;">4</span>
+                                <span>形成液面差，产生渗透压</span>
+                            </div>
+                        </div>
+                        <!-- 密度差异 -->
+                        <div id="steps-density" style="display:none;">
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#cc4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">1</span>
+                                <span>准备不同浓度的溶液</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#cc4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">2</span>
+                                <span>浓糖水(红色)密度大</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#cc4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">3</span>
+                                <span>密度大的液体下沉</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#cc4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">4</span>
+                                <span>稳定后形成清晰分层</span>
+                            </div>
+                        </div>
+                        <!-- 热对流 -->
+                        <div id="steps-mixing" style="display:none;">
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ff6644;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">1</span>
+                                <span>对液体底部进行加热</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ff6644;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">2</span>
+                                <span>底部液体受热膨胀，密度降低</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ff6644;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">3</span>
+                                <span>热液体上升，冷液体下沉</span>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin:8px 0;">
+                                <span style="width:24px;height:24px;background:#ff6644;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8em;color:#fff;">4</span>
+                                <span>形成持续循环的对流</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>相关概念</h3>
+                    <div class="formula">
+                        溶解度 = 溶质在溶剂中的最大溶解量<br>
+                        <span style="font-size:0.8em;color:#888;">温度↑ ⟹ 固体溶解度↑ (多数情况)<br>温度↑ ⟹ 气体溶解度↓</span>
+                    </div>
+
+                    <h3>生活应用</h3>
+                    <ul>
+                        <li>🍬 制作糖水饮料</li>
+                        <li>🧂 烹饪时加盐调味</li>
+                        <li>💊 药物溶解吸收</li>
+                        <li>🧴 工业溶液配制</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>💧 水分子三态变化与扩散演示 | 探索科学的奥秘</p>
+        </footer>
+    </div>
+
+    <script>
+        // ============ 全局状态 ============
+        let isAnimating = true;
+        let currentPhase = 'ice';
+        let temperature = -10;
+        let time = 0;
+
+        // 扩散相关
+        let diffusionRunning = false;
+        let diffusionParticles = [];
+        let soluteConcentration = [];
+        let diffusionTime = 0;
+
+        // 布朗运动
+        let brownianParticles = [];
+        let brownianPaused = false;
+        let brownianTime = 0;
+
+        // 实验
+        let currentExperiment = 'solution';
+        let experimentRunning = false;
+        let experimentTime = 0;
+
+        // ============ 水分子三态 ============
+        const phaseCanvas = document.getElementById('phaseCanvas');
+        const phaseCtx = phaseCanvas.getContext('2d');
+
+        class WaterMolecule {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.baseX = x;
+                this.baseY = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.angle = Math.random() * Math.PI * 2;
+                this.angularVel = (Math.random() - 0.5) * 0.1;
+                this.phase = 'ice';
+                this.targetX = x;
+                this.targetY = y;
+            }
+
+            update(temp) {
+                const baseVibration = Math.abs(temp) * 0.05 + 2;
+                
+                if (temp < 0) {
+                    // 冰态：紧密排列，轻微振动
+                    this.vx = (Math.random() - 0.5) * baseVibration * 0.5;
+                    this.vy = (Math.random() - 0.5) * baseVibration * 0.5;
+                    this.angularVel = (Math.random() - 0.5) * 0.02;
+                } else if (temp < 100) {
+                    // 液态：可流动，较大振动
+                    const drift = 0.3;
+                    this.vx += (Math.random() - 0.5) * baseVibration * 2;
+                    this.vy += (Math.random() - 0.5) * baseVibration * 2;
+                    this.vx *= 0.95;
+                    this.vy *= 0.95;
+                    
+                    // 边界反弹
+                    if (this.x < 30 || this.x > phaseCanvas.width - 30) this.vx *= -0.8;
+                    if (this.y < 50 || this.y > phaseCanvas.height - 30) this.vy *= -0.8;
+                    
+                    this.angularVel = (Math.random() - 0.5) * 0.05;
+                } else {
+                    // 气态：高速自由运动
+                    this.vx += (Math.random() - 0.5) * baseVibration * 5;
+                    this.vy += (Math.random() - 0.5) * baseVibration * 5 - 0.5; // 向上趋势
+                    this.vx *= 0.98;
+                    this.vy *= 0.98;
+                    
+                    // 边界反弹
+                    if (this.x < 20 || this.x > phaseCanvas.width - 20) this.vx *= -0.9;
+                    if (this.y < 20) this.vy = Math.abs(this.vy) * 0.5;
+                    if (this.y > phaseCanvas.height - 20) this.vy *= -0.9;
+                    
+                    this.angularVel = (Math.random() - 0.5) * 0.2;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.angle += this.angularVel;
+
+                // 保持一定间距
+                this.x = Math.max(15, Math.min(phaseCanvas.width - 15, this.x));
+                this.y = Math.max(35, Math.min(phaseCanvas.height - 15, this.y));
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // 氧原子（大）
+                ctx.beginPath();
+                ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                const oGrad = ctx.createRadialGradient(-3, -3, 0, 0, 0, 10);
+                oGrad.addColorStop(0, '#ff6666');
+                oGrad.addColorStop(1, '#cc4444');
+                ctx.fillStyle = oGrad;
+                ctx.fill();
+                ctx.strokeStyle = '#aa3333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // 氢原子（小）
+                const hAngle1 = -0.5;
+                const hAngle2 = 0.5;
+                const bondLen = 18;
+
+                // O-H键
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 3;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(hAngle1) * bondLen, Math.sin(hAngle1) * bondLen);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(hAngle2) * bondLen, Math.sin(hAngle2) * bondLen);
+                ctx.stroke();
+
+                // H原子
+                const hGrad = ctx.createRadialGradient(-2, -2, 0, 0, 0, 7);
+                hGrad.addColorStop(0, '#ffffff');
+                hGrad.addColorStop(1, '#dddddd');
+
+                ctx.beginPath();
+                ctx.arc(Math.cos(hAngle1) * bondLen, Math.sin(hAngle1) * bondLen, 6, 0, Math.PI * 2);
+                ctx.fillStyle = hGrad;
+                ctx.fill();
+                ctx.strokeStyle = '#aaa';
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(Math.cos(hAngle2) * bondLen, Math.sin(hAngle2) * bondLen, 6, 0, Math.PI * 2);
+                ctx.fillStyle = hGrad;
+                ctx.fill();
+                ctx.strokeStyle = '#aaa';
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
+        let molecules = [];
+
+        function initMolecules() {
+            molecules = [];
+            const spacing = 55;
+            const cols = Math.floor((phaseCanvas.width - 80) / spacing);
+            const rows = Math.floor((phaseCanvas.height - 120) / spacing);
+            const startX = (phaseCanvas.width - cols * spacing) / 2 + 40;
+            const startY = (phaseCanvas.height - rows * spacing) / 2 + 40;
+
+            for (let i = 0; i < cols * rows; i++) {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                const x = startX + col * spacing + (Math.random() - 0.5) * 10;
+                const y = startY + row * spacing + (Math.random() - 0.5) * 10;
+                molecules.push(new WaterMolecule(x, y));
+            }
+        }
+
+        function drawPhaseCanvas() {
+            const ctx = phaseCtx;
+            const canvas = phaseCanvas;
+
+            // 背景
+            if (temperature < 0) {
+                ctx.fillStyle = 'linear-gradient(180deg, #e8f4ff, #c8e8ff)';
+                ctx.fillStyle = '#e0f0ff';
+            } else if (temperature < 100) {
+                ctx.fillStyle = '#1a3a5c';
+            } else {
+                ctx.fillStyle = '#2a1a3c';
+            }
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 容器
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(25, 35, canvas.width - 50, canvas.height - 55);
+
+            // 分子
+            molecules.forEach(mol => {
+                if (isAnimating) mol.update(temperature);
+                mol.draw(ctx);
+            });
+
+            // 温度标签
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            const stateName = temperature < 0 ? '冰 (固态)' : temperature < 100 ? '水 (液态)' : '水蒸气 (气态)';
+            ctx.fillText(stateName, canvas.width / 2, 25);
+
+            if (isAnimating) {
+                requestAnimationFrame(drawPhaseCanvas);
+            }
+        }
+
+        function setPhase(phase) {
+            document.querySelectorAll('.state-dot').forEach(d => d.classList.remove('active'));
+            event.target.closest('.state-dot').classList.add('active');
+
+            if (phase === 'ice') {
+                temperature = -10;
+                document.getElementById('tempSlider').value = -10;
+            } else if (phase === 'water') {
+                temperature = 25;
+                document.getElementById('tempSlider').value = 25;
+            } else {
+                temperature = 110;
+                document.getElementById('tempSlider').value = 110;
+            }
+            updateTemp();
+        }
+
+        function updateTemp() {
+            temperature = parseInt(document.getElementById('tempSlider').value);
+            document.getElementById('tempValue').textContent = temperature + '°C';
+
+            // 更新温度计
+            const fillPercent = ((temperature + 20) / 140) * 100;
+            document.getElementById('thermoFill').style.height = fillPercent + '%';
+
+            // 更新状态指示器
+            document.querySelectorAll('.state-dot').forEach(d => d.classList.remove('active'));
+            if (temperature < 0) {
+                document.querySelector('.state-dot.ice').classList.add('active');
+            } else if (temperature < 100) {
+                document.querySelector('.state-dot.water').classList.add('active');
+            } else {
+                document.querySelector('.state-dot.steam').classList.add('active');
+            }
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            if (isAnimating) {
+                drawPhaseCanvas();
+            }
+        }
+
+        function resetSimulation() {
+            initMolecules();
+        }
+
+        // ============ 扩散模拟 ============
+        const diffusionCanvas = document.getElementById('diffusionCanvas');
+        const diffusionCtx = diffusionCanvas.getContext('2d');
+
+        class SoluteParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.opacity = 0;
+                this.targetOpacity = 1;
+                this.solute = document.getElementById('soluteSelect').value;
+            }
+
+            update() {
+                const temp = parseInt(document.getElementById('diffTempSlider').value);
+                const speed = 0.1 + temp * 0.01;
+
+                this.vx += (Math.random() - 0.5) * speed;
+                this.vy += (Math.random() - 0.5) * speed;
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 边界
+                if (this.x < 30 || this.x > diffusionCanvas.width - 30) this.vx *= -0.8;
+                if (this.y < 50 || this.y > diffusionCanvas.height - 30) this.vy *= -0.8;
+
+                this.opacity = Math.min(1, this.opacity + 0.02);
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+
+                const colors = {
+                    salt: '#ffaa00',
+                    sugar: '#ff88cc',
+                    food: '#ff4466',
+                    permanganate: '#8800cc'
+                };
+                const color = colors[this.solute] || '#ffaa00';
+
+                // 溶质粒子
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+                const grad = ctx.createRadialGradient(this.x - 2, this.y - 2, 0, this.x, this.y, 5);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.5, color);
+                grad.addColorStop(1, color);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // 光晕
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = color.replace(')', ', 0.2)').replace('rgb', 'rgba');
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        let soluteParticles = [];
+        let waterParticles = [];
+
+        function initDiffusion() {
+            soluteParticles = [];
+            waterParticles = [];
+
+            // 溶质粒子（集中在中心）
+            const centerX = diffusionCanvas.width / 2;
+            const centerY = diffusionCanvas.height / 2;
+            for (let i = 0; i < 50; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = Math.random() * 20;
+                soluteParticles.push(new SoluteParticle(
+                    centerX + Math.cos(angle) * r,
+                    centerY + Math.cos(angle) * r * 0.5 + 30
+                ));
+            }
+
+            // 水分子
+            for (let i = 0; i < 150; i++) {
+                waterParticles.push({
+                    x: Math.random() * diffusionCanvas.width,
+                    y: 60 + Math.random() * (diffusionCanvas.height - 90),
+                    angle: Math.random() * Math.PI * 2,
+                    size: 3 + Math.random() * 2
+                });
+            }
+        }
+
+        function drawDiffusionCanvas() {
+            const ctx = diffusionCtx;
+            const canvas = diffusionCanvas;
+
+            // 背景（水）
+            ctx.fillStyle = '#1a4a7a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 水分子（背景）
+            waterParticles.forEach(p => {
+                p.angle += 0.02;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle);
+
+                ctx.beginPath();
+                ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(100, 180, 255, 0.3)';
+                ctx.fill();
+
+                ctx.restore();
+            });
+
+            // 溶质粒子
+            if (diffusionRunning) {
+                soluteParticles.forEach(p => {
+                    p.update();
+                    p.draw(ctx);
+                });
+            } else {
+                soluteParticles.forEach(p => p.draw(ctx));
+            }
+
+            // 容器
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(25, 45, canvas.width - 50, canvas.height - 65);
+
+            // 标签
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('溶质扩散演示', canvas.width / 2, 30);
+
+            // 更新统计
+            if (diffusionRunning) {
+                diffusionTime += 0.016;
+                const radius = Math.min(diffusionTime * 30, 250);
+                document.getElementById('timeElapsed').textContent = diffusionTime.toFixed(1);
+                document.getElementById('spreadRadius').textContent = Math.round(radius);
+            }
+
+            requestAnimationFrame(drawDiffusionCanvas);
+        }
+
+        function startDiffusion() {
+            diffusionRunning = true;
+            document.getElementById('diffuseBtn').disabled = true;
+        }
+
+        function resetDiffusion() {
+            diffusionRunning = false;
+            diffusionTime = 0;
+            document.getElementById('diffuseBtn').disabled = false;
+            document.getElementById('timeElapsed').textContent = '0';
+            document.getElementById('spreadRadius').textContent = '0';
+            initDiffusion();
+        }
+
+        function updateSolute() {
+            soluteParticles.forEach(p => {
+                p.solute = document.getElementById('soluteSelect').value;
+            });
+        }
+
+        // ============ 布朗运动 ============
+        const brownianCanvas = document.getElementById('brownianCanvas');
+        const brownianCtx = brownianCanvas.getContext('2d');
+
+        class BrownianParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.startX = x;
+                this.startY = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.trail = [];
+                this.maxTrail = 100;
+            }
+
+            update(temp) {
+                const speed = 0.5 + temp * 0.03;
+                this.vx += (Math.random() - 0.5) * speed;
+                this.vy += (Math.random() - 0.5) * speed;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 边界反弹
+                if (this.x < 30 || this.x > brownianCanvas.width - 30) this.vx *= -0.9;
+                if (this.y < 50 || this.y > brownianCanvas.height - 30) this.vy *= -0.9;
+
+                // 记录轨迹
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > this.maxTrail) {
+                    this.trail.shift();
+                }
+            }
+
+            draw(ctx, size) {
+                // 轨迹
+                if (this.trail.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                    ctx.strokeStyle = 'rgba(100, 200, 255, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                // 粒子
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+                const grad = ctx.createRadialGradient(this.x - size/3, this.y - size/3, 0, this.x, this.y, size);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(1, '#88ddff');
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // 光晕
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size * 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(136, 221, 255, 0.2)';
+                ctx.fill();
+            }
+        }
+
+        let brownianParticlesList = [];
+
+        function initBrownian() {
+            brownianParticlesList = [];
+            for (let i = 0; i < 15; i++) {
+                brownianParticlesList.push(new BrownianParticle(
+                    100 + Math.random() * (brownianCanvas.width - 200),
+                    80 + Math.random() * (brownianCanvas.height - 130)
+                ));
+            }
+        }
+
+        function drawBrownianCanvas() {
+            const ctx = brownianCtx;
+            const canvas = brownianCanvas;
+            const temp = parseInt(document.getElementById('brownTemp').value);
+            const size = parseInt(document.getElementById('particleSize').value);
+
+            // 更新温度显示
+            document.getElementById('brownTempValue').textContent = temp + '°C';
+
+            // 背景
+            ctx.fillStyle = '#0a1525';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 水分子背景
+            ctx.fillStyle = 'rgba(100, 150, 200, 0.1)';
+            for (let i = 0; i < 200; i++) {
+                const x = Math.random() * canvas.width;
+                const y = 50 + Math.random() * (canvas.height - 80);
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 粒子
+            if (!brownianPaused) {
+                brownianParticlesList.forEach(p => {
+                    p.update(temp);
+                    p.draw(ctx, size);
+                });
+                brownianTime++;
+            } else {
+                brownianParticlesList.forEach(p => p.draw(ctx, size));
+            }
+
+            // 容器
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(25, 45, canvas.width - 50, canvas.height - 65);
+
+            // 标签
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('布朗运动模拟 (放大观察)', canvas.width / 2, 30);
+
+            // 统计
+            if (!brownianPaused && brownianTime % 30 === 0) {
+                const totalSpeed = brownianParticlesList.reduce((sum, p) => {
+                    return sum + Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                }, 0);
+                const avgSpeed = (totalSpeed / brownianParticlesList.length * 10).toFixed(1);
+                document.getElementById('avgSpeed').textContent = avgSpeed;
+
+                const p = brownianParticlesList[0];
+                const disp = Math.sqrt(Math.pow(p.x - p.startX, 2) + Math.pow(p.y - p.startY, 2)).toFixed(0);
+                document.getElementById('displacement').textContent = disp;
+            }
+
+            requestAnimationFrame(drawBrownianCanvas);
+        }
+
+        function toggleBrownian() {
+            brownianPaused = !brownianPaused;
+        }
+
+        function resetBrownian() {
+            brownianTime = 0;
+            brownianPaused = false;
+            initBrownian();
+        }
+
+        // ============ 实验模拟 ============
+        const expCanvas = document.getElementById('expCanvas');
+        const expCtx = expCanvas.getContext('2d');
+
+        let expWaterParticles = [];
+        let expTime = 0;
+
+        // 实验特定数据
+        let expSugarBlock = null;
+        let expDissolvedSugar = [];
+        let expOsmosisWater = [];
+        let expOsmosisLevel = 0;
+        let expDensityParticles = [];
+        let expDensitySeparated = 0;
+        let expConvectionParticles = [];
+        let expHeatBottom = 0;
+
+        function initExperiment() {
+            expWaterParticles = [];
+            expDissolvedSugar = [];
+            expOsmosisWater = [];
+            expDensityParticles = [];
+            expConvectionParticles = [];
+            expTime = 0;
+            expOsmosisLevel = 0;
+            expHeatBottom = 0;
+            expDensitySeparated = 0;
+
+            const centerX = expCanvas.width / 2;
+            const centerY = expCanvas.height / 2;
+
+            // 根据实验类型初始化
+            if (currentExperiment === 'solution') {
+                // 糖块
+                expSugarBlock = {
+                    x: centerX - 30,
+                    y: centerY - 25,
+                    width: 60,
+                    height: 50,
+                    opacity: 1
+                };
+                // 糖分子
+                expDissolvedSugar = [];
+                // 水分子
+                for (let i = 0; i < 150; i++) {
+                    expWaterParticles.push({
+                        x: Math.random() * expCanvas.width,
+                        y: 60 + Math.random() * (expCanvas.height - 90),
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        angle: Math.random() * Math.PI * 2
+                    });
+                }
+            } else if (currentExperiment === 'osmosis') {
+                // 渗透实验 - 两侧液面
+                expOsmosisLevel = 0;
+                // 渗透用水分子 - 初始都在各自一侧
+                expOsmosisWater = [];
+                // 左侧高浓度糖水（70个分子）
+                for (let i = 0; i < 70; i++) {
+                    expOsmosisWater.push({
+                        x: 60 + Math.random() * 180,
+                        y: 100 + Math.random() * 250,
+                        vx: (Math.random() - 0.5) * 1,
+                        vy: (Math.random() - 0.5) * 1,
+                        inLeft: true,
+                        isSugar: true  // 溶质分子
+                    });
+                }
+                // 右侧纯水（30个水分子）
+                for (let i = 0; i < 30; i++) {
+                    expOsmosisWater.push({
+                        x: 410 + Math.random() * 180,
+                        y: 100 + Math.random() * 250,
+                        vx: (Math.random() - 0.5) * 1,
+                        vy: (Math.random() - 0.5) * 1,
+                        inLeft: false,
+                        isSugar: false  // 水分子
+                    });
+                }
+            } else if (currentExperiment === 'density') {
+                // 密度实验 - 初始混合状态
+                expDensityParticles = [];
+                expDensitySeparated = 0;
+                // 红色粒子（密度大，初始在底部）
+                for (let i = 0; i < 60; i++) {
+                    expDensityParticles.push({
+                        x: 120 + Math.random() * 360,
+                        y: 280 + Math.random() * 100,  // 初始在下方
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 2,
+                        color: '#ff4444',
+                        size: 8,
+                        density: 1.5
+                    });
+                }
+                // 蓝色粒子（密度小，初始在上方）
+                for (let i = 0; i < 60; i++) {
+                    expDensityParticles.push({
+                        x: 120 + Math.random() * 360,
+                        y: 100 + Math.random() * 120,  // 初始在上方
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 2,
+                        color: '#4488ff',
+                        size: 8,
+                        density: 1.0
+                    });
+                }
+            } else if (currentExperiment === 'mixing') {
+                // 热对流实验
+                expHeatBottom = 0;
+                expConvectionParticles = [];
+                for (let i = 0; i < 80; i++) {
+                    expConvectionParticles.push({
+                        x: 120 + Math.random() * 360,
+                        y: 100 + Math.random() * 280,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        temp: 20,
+                        size: 6 + Math.random() * 4
+                    });
+                }
+            }
+        }
+
+        function drawExperimentCanvas() {
+            const ctx = expCtx;
+            const canvas = expCanvas;
+
+            expTime++;
+
+            if (currentExperiment === 'solution') {
+                drawSolutionExperiment(ctx, canvas);
+            } else if (currentExperiment === 'osmosis') {
+                drawOsmosisExperiment(ctx, canvas);
+            } else if (currentExperiment === 'density') {
+                drawDensityExperiment(ctx, canvas);
+            } else if (currentExperiment === 'mixing') {
+                drawConvectionExperiment(ctx, canvas);
+            }
+
+            requestAnimationFrame(drawExperimentCanvas);
+        }
+
+        // ============ 溶解过程 ============
+        function drawSolutionExperiment(ctx, canvas) {
+            // 蓝色背景（水）
+            ctx.fillStyle = '#1a5a8a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 水分子动画
+            expWaterParticles.forEach(p => {
+                p.angle += 0.02;
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 30 || p.x > canvas.width - 30) p.vx *= -1;
+                if (p.y < 60 || p.y > canvas.height - 40) p.vy *= -1;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.angle);
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(150, 210, 255, 0.5)';
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 溶解的糖分子
+            expDissolvedSugar.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.01; // 轻微下沉
+                p.vx *= 0.99;
+                p.vy *= 0.99;
+
+                // 边界
+                if (p.x < 30) { p.vx *= -1; p.x = 31; }
+                if (p.x > canvas.width - 30) { p.vx *= -1; p.x = canvas.width - 31; }
+                if (p.y < 60) { p.vy *= -1; p.y = 61; }
+                if (p.y > canvas.height - 40) { p.vy *= -1; p.y = canvas.height - 41; }
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                const grad = ctx.createRadialGradient(p.x - 2, p.y - 2, 0, p.x, p.y, 5);
+                grad.addColorStop(0, '#ffdd88');
+                grad.addColorStop(1, '#ffaa00');
+                ctx.fillStyle = grad;
+                ctx.fill();
+            });
+
+            // 糖块
+            if (expSugarBlock && expSugarBlock.opacity > 0.1) {
+                ctx.save();
+                ctx.globalAlpha = expSugarBlock.opacity;
+
+                // 糖块本体
+                ctx.fillStyle = '#ffe4aa';
+                ctx.fillRect(expSugarBlock.x, expSugarBlock.y, expSugarBlock.width, expSugarBlock.height);
+
+                // 纹理
+                ctx.strokeStyle = '#ddb866';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 4; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(expSugarBlock.x + 5, expSugarBlock.y + 10 + i * 12);
+                    ctx.lineTo(expSugarBlock.x + expSugarBlock.width - 5, expSugarBlock.y + 10 + i * 12);
+                    ctx.stroke();
+                }
+
+                // 高光
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.fillRect(expSugarBlock.x + 5, expSugarBlock.y + 5, 15, 10);
+
+                ctx.restore();
+
+                // 溶解动画
+                if (experimentRunning && expSugarBlock.opacity > 0.1) {
+                    // 从表面溶解糖分子
+                    if (Math.random() < 0.4) {
+                        const side = Math.floor(Math.random() * 4);
+                        let nx, ny;
+                        if (side === 0) { // 上
+                            nx = expSugarBlock.x + Math.random() * expSugarBlock.width;
+                            ny = expSugarBlock.y;
+                        } else if (side === 1) { // 下
+                            nx = expSugarBlock.x + Math.random() * expSugarBlock.width;
+                            ny = expSugarBlock.y + expSugarBlock.height;
+                        } else if (side === 2) { // 左
+                            nx = expSugarBlock.x;
+                            ny = expSugarBlock.y + Math.random() * expSugarBlock.height;
+                        } else { // 右
+                            nx = expSugarBlock.x + expSugarBlock.width;
+                            ny = expSugarBlock.y + Math.random() * expSugarBlock.height;
+                        }
+                        expDissolvedSugar.push({
+                            x: nx,
+                            y: ny,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2
+                        });
+                    }
+                    expSugarBlock.opacity -= 0.0008;
+                    expSugarBlock.width -= 0.03;
+                    expSugarBlock.height -= 0.025;
+                    expSugarBlock.x += 0.015;
+                    expSugarBlock.y += 0.0125;
+                }
+            }
+
+            // 溶液颜色变化（糖越多颜色越深）
+            if (expDissolvedSugar.length > 0) {
+                const opacity = Math.min(0.3, expDissolvedSugar.length * 0.003);
+                ctx.fillStyle = `rgba(255, 200, 100, ${opacity})`;
+                ctx.fillRect(30, 60, canvas.width - 60, canvas.height - 100);
+            }
+
+            // 容器
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(30, 60, canvas.width - 60, canvas.height - 100);
+
+            // 标签
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🧪 溶解过程模拟', canvas.width / 2, 30);
+
+            // 说明
+            ctx.font = '12px Arial';
+            ctx.fillText(`糖分子数量: ${expDissolvedSugar.length} | 糖块剩余: ${Math.max(0, (expSugarBlock?.opacity || 0) * 100).toFixed(0)}%`, canvas.width / 2, canvas.height - 15);
+
+            // 溶解说明
+            if (expDissolvedSugar.length > 0 && expDissolvedSugar.length < 10) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.font = '14px Arial';
+                ctx.fillText('💧 糖分子开始从表面溶解...', canvas.width / 2, 80);
+            } else if (expDissolvedSugar.length >= 10 && expDissolvedSugar.length < 50) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText('🔄 糖分子在水中扩散...', canvas.width / 2, 80);
+            } else if (expDissolvedSugar.length >= 50) {
+                ctx.fillStyle = '#88ff88';
+                ctx.fillText('✓ 形成均匀糖水溶液', canvas.width / 2, 80);
+            }
+        }
+
+        // ============ 渗透作用 ============
+        function drawOsmosisExperiment(ctx, canvas) {
+            // 深色背景
+            ctx.fillStyle = '#0a1a2a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 容器参数
+            const leftX = 50, rightX = 350;
+            const containerY = 100;
+            const containerH = 280;
+            const containerW = 200;
+            const baseLevel = containerY + containerH - 60;
+
+            // 绘制容器
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 2;
+
+            // 左侧容器（高浓度糖水）
+            ctx.fillStyle = 'rgba(255, 150, 100, 0.4)';
+            ctx.fillRect(leftX, baseLevel - 180, containerW, 180);
+            ctx.strokeRect(leftX, containerY, containerW, containerH);
+
+            // 右侧容器（纯水）
+            ctx.fillStyle = 'rgba(100, 180, 255, 0.3)';
+            ctx.fillRect(rightX, baseLevel - 180, containerW, 180);
+            ctx.strokeRect(rightX, containerY, containerW, containerH);
+
+            // 半透膜（中间）
+            ctx.fillStyle = 'rgba(200, 150, 100, 0.3)';
+            ctx.fillRect(leftX + containerW, containerY, 30, containerH);
+            ctx.strokeStyle = '#cc9966';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.moveTo(leftX + containerW, containerY);
+            ctx.lineTo(leftX + containerW, containerY + containerH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 半透膜标签
+            ctx.fillStyle = '#ffcc88';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('半透膜', leftX + containerW + 15, containerY - 10);
+
+            // 液面线
+            const leftLevel = baseLevel - 60 - expOsmosisLevel;
+            const rightLevel = baseLevel - 60 + expOsmosisLevel * 1.5;
+
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(leftX - 5, leftLevel);
+            ctx.lineTo(leftX + containerW + 5, leftLevel);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(rightX - 5, rightLevel);
+            ctx.lineTo(rightX + containerW + 5, rightLevel);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 标签
+            ctx.fillStyle = '#ffaa88';
+            ctx.font = '12px Arial';
+            ctx.fillText('高浓度(糖水)', leftX + containerW/2, containerY + 20);
+            ctx.fillStyle = '#88ccff';
+            ctx.fillText('低浓度(纯水)', rightX + containerW/2, containerY + 20);
+
+            // 水分子动画
+            expOsmosisWater.forEach(p => {
+                // 边界
+                let minX, maxX;
+                if (p.inLeft) {
+                    minX = leftX + 8;
+                    maxX = leftX + containerW - 8;
+                } else {
+                    minX = rightX + 8;
+                    maxX = rightX + containerW - 8;
+                }
+
+                // 实验运行时，水分子可以穿过半透膜，糖分子不行
+                if (experimentRunning) {
+                    // 水分子穿过半透膜
+                    if (!p.isSugar) {
+                        if (p.inLeft && p.x > maxX - 15 && Math.random() < 0.008) {
+                            p.inLeft = false;
+                            p.x = leftX + containerW + 15;
+                        } else if (!p.inLeft && p.x < minX + 15 && Math.random() < 0.01) {
+                            p.inLeft = true;
+                            p.x = rightX + containerW + 15;
+                        }
+                    }
+                }
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // 随机运动
+                p.vx += (Math.random() - 0.5) * 0.3;
+                p.vy += (Math.random() - 0.5) * 0.3;
+                p.vx *= 0.97;
+                p.vy *= 0.97;
+
+                // 边界
+                if (p.x < minX) { p.x = minX; p.vx *= -0.8; }
+                if (p.x > maxX) { p.x = maxX; p.vx *= -0.8; }
+                if (p.y < containerY + 8) { p.y = containerY + 8; p.vy *= -0.8; }
+                if (p.y > containerY + containerH - 8) { p.y = containerY + containerH - 8; p.vy *= -0.8; }
+
+                // 绘制
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.isSugar ? 5 : 4, 0, Math.PI * 2);
+                if (p.isSugar) {
+                    ctx.fillStyle = p.inLeft ? 'rgba(255, 180, 150, 0.9)' : 'rgba(255, 220, 200, 0.7)';
+                } else {
+                    ctx.fillStyle = p.inLeft ? 'rgba(150, 200, 255, 0.7)' : 'rgba(100, 180, 255, 0.9)';
+                }
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+
+            // 更新液面
+            if (experimentRunning) {
+                const leftWaterCount = expOsmosisWater.filter(p => !p.isSugar && p.inLeft).length;
+                expOsmosisLevel += (leftWaterCount - 20) * 0.003;
+                expOsmosisLevel = Math.max(-50, Math.min(60, expOsmosisLevel));
+            }
+
+            // 标题
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🌊 渗透作用模拟', canvas.width / 2, 30);
+
+            // 说明
+            ctx.font = '11px Arial';
+            ctx.fillStyle = '#88ccff';
+            ctx.fillText(`水分子可穿过半透膜，糖分子不能 | 液面差: ${Math.abs(expOsmosisLevel).toFixed(1)}px`, canvas.width / 2, canvas.height - 15);
+
+            if (!experimentRunning) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText('点击"运行实验"开始', canvas.width / 2, 60);
+            } else if (Math.abs(expOsmosisLevel) < 10) {
+                ctx.fillStyle = '#88ccff';
+                ctx.fillText('💧 水分子开始渗透...', canvas.width / 2, 60);
+            } else {
+                ctx.fillStyle = '#88ff88';
+                ctx.fillText('✓ 渗透压形成', canvas.width / 2, 60);
+            }
+        }
+
+        // ============ 密度差异 ============
+        function drawDensityExperiment(ctx, canvas) {
+            // 白色背景
+            ctx.fillStyle = '#f8f8f8';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 容器
+            const containerX = 100, containerY = 60;
+            const containerW = 400, containerH = 350;
+
+            // 计算分层位置
+            const sep = expDensitySeparated;
+            const midY = containerY + containerH * 0.5 + (sep - 0.5) * 100;
+
+            // 背景液体颜色（随分离程度变化）
+            ctx.fillStyle = `rgba(200, 100, 100, ${0.2 + sep * 0.3})`;
+            ctx.fillRect(containerX, midY, containerW, containerY + containerH - midY);
+
+            ctx.fillStyle = `rgba(100, 150, 220, ${0.3 + (1-sep) * 0.2})`;
+            ctx.fillRect(containerX, containerY, containerW, midY - containerY);
+
+            // 分界线
+            ctx.strokeStyle = `rgba(100, 100, 100, ${0.3 + sep * 0.4})`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(containerX, midY);
+            ctx.lineTo(containerX + containerW, midY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 密度粒子
+            expDensityParticles.forEach(p => {
+                if (experimentRunning) {
+                    // 分离过程：高密度下沉，低密度上浮
+                    const targetY = p.density > 1.2 ?
+                        containerY + containerH - 40 + Math.random() * 20 : // 高密度下沉
+                        containerY + 40 + Math.random() * 20; // 低密度上浮
+
+                    p.y += (targetY - p.y) * 0.015;
+                    p.x += (Math.random() - 0.5) * 1.5;
+
+                    // 边界
+                    if (p.x < containerX + 10) p.x = containerX + 10;
+                    if (p.x > containerX + containerW - 10) p.x = containerX + containerW - 10;
+                }
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+
+            // 密度标签
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('高密度 (ρ大)', containerX + containerW/2, midY + 50);
+            ctx.fillText('低密度 (ρ小)', containerX + containerW/2, containerY + 30);
+
+            // 图例
+            ctx.font = '11px Arial';
+            ctx.fillStyle = '#ff4444';
+            ctx.fillRect(containerX + containerW + 15, midY + 30, 15, 15);
+            ctx.fillStyle = '#333';
+            ctx.fillText('ρ=1.5', containerX + containerW + 35, midY + 42);
+
+            ctx.fillStyle = '#4488ff';
+            ctx.fillRect(containerX + containerW + 15, midY - 15, 15, 15);
+            ctx.fillStyle = '#333';
+            ctx.fillText('ρ=1.0', containerX + containerW + 35, midY - 3);
+
+            // 容器边框
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(containerX, containerY, containerW, containerH);
+
+            // 标题
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('⬇️ 密度差异演示', canvas.width / 2, 30);
+
+            // 说明
+            ctx.font = '11px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText('密度大的下沉，密度小的上浮', canvas.width / 2, canvas.height - 15);
+
+            if (!experimentRunning) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText('点击"运行实验"观察分层', canvas.width / 2, 55);
+            } else if (sep < 0.8) {
+                ctx.fillStyle = '#88ccff';
+                ctx.fillText('⏳ 分离中...', canvas.width / 2, 55);
+            } else {
+                ctx.fillStyle = '#88ff88';
+                ctx.fillText('✓ 分层完成', canvas.width / 2, 55);
+            }
+        }
+
+        // ============ 热对流 ============
+        function drawConvectionExperiment(ctx, canvas) {
+            // 温度渐变背景
+            const heatLevel = expHeatBottom;
+            const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
+            gradient.addColorStop(0, `rgba(${200 + heatLevel * 55}, ${100 - heatLevel * 50}, 50, 0.7)`);
+            gradient.addColorStop(0.4, `rgba(255, ${180 + heatLevel * 20}, 100, ${0.3 + heatLevel * 0.2})`);
+            gradient.addColorStop(1, `rgba(100, 150, 255, 0.5)`);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const containerX = 100, containerY = 60;
+            const containerW = 400, containerH = 350;
+
+            // 火焰效果
+            if (experimentRunning) {
+                expHeatBottom = Math.min(1, expHeatBottom + 0.015);
+
+                for (let i = 0; i < 6; i++) {
+                    const flameX = containerX + 30 + i * 60;
+                    const flameH = 20 + Math.sin(expTime * 0.3 + i * 2) * 10;
+
+                    ctx.fillStyle = `rgba(255, ${150 + Math.random() * 50}, 0, ${0.6 + Math.random() * 0.3})`;
+                    ctx.beginPath();
+                    ctx.moveTo(flameX - 12, containerY + containerH);
+                    ctx.lineTo(flameX, containerY + containerH - flameH);
+                    ctx.lineTo(flameX + 12, containerY + containerH);
+                    ctx.fill();
+                }
+            }
+
+            // 对流粒子
+            expConvectionParticles.forEach(p => {
+                if (experimentRunning) {
+                    // 对流：底部热→上升，顶部冷→下沉
+                    const relY = (p.y - containerY) / containerH;
+                    const heatForce = (0.7 - relY) * 0.08 * expHeatBottom;
+
+                    p.vy -= heatForce;
+                    p.vx += (Math.random() - 0.5) * 0.4;
+                    p.vy += (Math.random() - 0.5) * 0.4;
+
+                    // 温度变化
+                    p.temp = 20 + (0.7 - relY) * 60 * expHeatBottom + Math.random() * 15;
+
+                    // 阻力和边界
+                    p.vx *= 0.95;
+                    p.vy *= 0.95;
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < containerX + 8) { p.x = containerX + 8; p.vx *= -0.9; }
+                    if (p.x > containerX + containerW - 8) { p.x = containerX + containerW - 8; p.vx *= -0.9; }
+                    if (p.y < containerY + 8) { p.y = containerY + 8; p.vy *= -0.9; }
+                    if (p.y > containerY + containerH - 8) { p.y = containerY + containerH - 8; p.vy *= -0.9; }
+                }
+
+                // 温度颜色
+                const t = Math.max(0, Math.min(1, (p.temp - 20) / 80));
+                const r = Math.round(100 + t * 155);
+                const g = Math.round(150 + t * 50);
+                const b = Math.round(255 - t * 200);
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.85)`;
+                ctx.fill();
+            });
+
+            // 对流箭头
+            if (experimentRunning && expHeatBottom > 0.3) {
+                ctx.strokeStyle = 'rgba(255, 220, 100, 0.8)';
+                ctx.lineWidth = 3;
+
+                // 上升箭头（右侧）
+                ctx.beginPath();
+                ctx.moveTo(containerX + containerW - 30, containerY + containerH - 30);
+                ctx.lineTo(containerX + containerW - 30, containerY + 30);
+                ctx.stroke();
+                drawArrowHead(ctx, containerX + containerW - 30, containerY + 30, Math.PI/2);
+
+                // 下沉箭头（左侧）
+                ctx.beginPath();
+                ctx.moveTo(containerX + 30, containerY + 30);
+                ctx.lineTo(containerX + 30, containerY + containerH - 30);
+                ctx.stroke();
+                drawArrowHead(ctx, containerX + 30, containerY + containerH - 30, -Math.PI/2);
+            }
+
+            // 温度图例
+            ctx.font = '11px Arial';
+            ctx.fillStyle = '#ff6644';
+            ctx.fillText('热', containerX, containerY + containerH + 18);
+            ctx.fillStyle = '#4488ff';
+            ctx.fillText('冷', containerX, containerY + containerH + 33);
+
+            // 容器边框
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(containerX, containerY, containerW, containerH);
+
+            // 标题
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🌡️ 热对流模拟', canvas.width / 2, 30);
+
+            // 说明
+            ctx.font = '11px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('底部加热 → 热膨胀上升 → 顶部冷却下沉 → 循环', canvas.width / 2, canvas.height - 15);
+
+            if (!experimentRunning) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText('点击"运行实验"开始', canvas.width / 2, 55);
+            } else if (expHeatBottom < 0.4) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText('🔥 加热中...', canvas.width / 2, 55);
+            } else {
+                ctx.fillStyle = '#88ff88';
+                ctx.fillText('↻ 对流循环', canvas.width / 2, 55);
+            }
+        }
+
+        function drawArrowHead(ctx, x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-8, 12);
+            ctx.lineTo(8, 12);
+            ctx.closePath();
+            ctx.fillStyle = ctx.fillStyle;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function selectExperiment(exp) {
+            currentExperiment = exp;
+            document.querySelectorAll('.exp-card').forEach(c => c.classList.remove('selected'));
+            // 查找并选中对应的卡片
+            const cards = document.querySelectorAll('.exp-card');
+            cards.forEach(card => {
+                if (card.getAttribute('onclick').includes(exp)) {
+                    card.classList.add('selected');
+                }
+            });
+
+            const titles = {
+                solution: '🧪 溶解过程模拟',
+                osmosis: '🌊 渗透作用模拟',
+                density: '⬇️ 密度差异模拟',
+                mixing: '🌡️ 热对流模拟'
+            };
+            const descs = {
+                solution: '观察糖分子在水中的溶解过程。糖分子逐渐扩散到水分子中间，最终形成均匀的糖水溶液。',
+                osmosis: '半透膜允许水分子通过，但阻止溶质分子通过。水分子从低浓度区域向高浓度区域移动。',
+                density: '不同浓度的溶液具有不同密度。观察高密度溶液在下、低密度溶液在上的分层现象。',
+                mixing: '加热导致液体产生对流。底部受热膨胀密度降低上升，顶部冷却后下沉形成循环。'
+            };
+
+            document.getElementById('expTitle').textContent = titles[exp];
+            document.getElementById('expDesc').textContent = descs[exp];
+
+            // 切换步骤显示
+            document.querySelectorAll('[id^="steps-"]').forEach(el => el.style.display = 'none');
+            const stepsEl = document.getElementById('steps-' + exp);
+            if (stepsEl) stepsEl.style.display = 'block';
+
+            experimentRunning = false;
+            document.getElementById('expBtn').disabled = false;
+            initExperiment();
+        }
+
+        function runExperiment() {
+            experimentRunning = true;
+            document.getElementById('expBtn').disabled = true;
+        }
+
+        function resetExperiment() {
+            experimentRunning = false;
+            document.getElementById('expBtn').disabled = false;
+            expHeatBottom = 0;
+            expOsmosisLevel = 0;
+            initExperiment();
+        }
+
+        // ============ 标签页切换 ============
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'phases') drawPhaseCanvas();
+            if (tabId === 'diffusion') drawDiffusionCanvas();
+            if (tabId === 'brownian') drawBrownianCanvas();
+            if (tabId === 'experiments') drawExperimentCanvas();
+        }
+
+        // ============ 初始化 ============
+        initMolecules();
+        initDiffusion();
+        initBrownian();
+        initExperiment();
+
+        drawPhaseCanvas();
+        drawDiffusionCanvas();
+        drawBrownianCanvas();
+        drawExperimentCanvas();
+
+        // 温度滑块事件
+        document.getElementById('diffTempSlider').addEventListener('input', (e) => {
+            document.getElementById('diffTempValue').textContent = e.target.value + '°C';
+        });
+    </script>
+</body>
+</html>

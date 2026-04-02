@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔊 音叉共鸣实验模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .canvas-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .btn-strike {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-strike:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-reset {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-reset:hover {
+            background: #d0d0d0;
+        }
+        
+        .btn-auto {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .btn-auto:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4);
+        }
+        
+        .info-panel {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .info-text {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .legend {
+            background: #fff8e1;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.8;
+        }
+        
+        .legend h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+        
+        .energy-bar {
+            display: inline-block;
+            width: 100px;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.1s ease;
+        }
+        
+        .fork-label {
+            position: absolute;
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        
+        .status-dot.active {
+            background: #4CAF50;
+            animation: pulse 0.5s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.5; }
+        }
+        
+        .frequency-display {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 音叉共鸣实验模拟器</h1>
+        <p class="subtitle">点击左侧音叉或按钮开始实验，观察能量如何传播</p>
+        
+        <div class="info-panel">
+            <div class="info-text" id="infoText">
+                <span class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">准备就绪 - 点击音叉 A 开始实验</span>
+                </span>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="simCanvas" width="800" height="400"></canvas>
+            <div class="frequency-display">
+                两个音叉频率: 440 Hz | 距离: 约 30cm
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn-strike" onclick="strikeForkA()">🥁 敲击音叉 A</button>
+            <button class="btn-reset" onclick="reset()">🔄 重置实验</button>
+            <button class="btn-auto" onclick="autoDemo()">▶️ 自动演示</button>
+        </div>
+        
+        <div class="legend">
+            <h3>💡 实验原理</h3>
+            <p>• <strong>音叉 A</strong> (蓝色): 被敲击的音叉，产生振动</p>
+            <p>• <strong>音叉 B</strong> (红色): 接收音叉，与A频率相同(440Hz)</p>
+            <p>• <strong>声波传播</strong>: 音叉振动推动空气，形成疏密波传播到另一音叉</p>
+            <p>• <strong>共振现象</strong>: 音叉B接收到相同频率的声波后开始共振</p>
+            <p>• <strong>能量衰减</strong>: 声波在空气中传播时会逐渐损失能量</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 音叉类
+        class TuningFork {
+            constructor(x, y, color, label, isStrikable = false) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.label = label;
+                this.isStrikable = isStrikable;
+                
+                // 振动参数
+                this.energy = 0;
+                this.amplitude = 0;
+                this.phase = 0;
+                this.frequency = 0.15;
+                
+                // 音叉尺寸
+                this.width = 60;
+                this.height = 100;
+            }
+            
+            strike(force = 1.0) {
+                this.energy = Math.min(this.energy + force, 1.0);
+            }
+            
+            update() {
+                // 能量衰减
+                this.energy *= 0.992;
+                this.amplitude = this.energy * 20;
+                
+                // 振动相位
+                this.phase += this.frequency;
+            }
+            
+            draw() {
+                const offset = Math.sin(this.phase) * this.amplitude;
+                const tineTop = this.y - this.height / 2;
+                const tineBottom = this.y + this.height / 2;
+                
+                // 绘制音叉臂（对向振动）
+                ctx.save();
+                
+                // 左叉臂
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                
+                const leftX = this.x - this.width / 2 - offset;
+                const rightX = this.x + this.width / 2 + offset;
+                
+                // 左臂
+                ctx.beginPath();
+                ctx.rect(leftX - 6, tineTop, 12, this.height);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 右臂
+                ctx.beginPath();
+                ctx.rect(rightX - 6, tineTop, 12, this.height);
+                ctx.fill();
+                ctx.stroke();
+                
+                // U型底座
+                ctx.beginPath();
+                ctx.arc(this.x, tineBottom, this.width / 2 + 5, 0, Math.PI, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.stroke();
+                
+                // 手柄
+                ctx.beginPath();
+                ctx.moveTo(this.x - 8, tineBottom);
+                ctx.lineTo(this.x + 8, tineBottom);
+                ctx.lineTo(this.x + 6, tineBottom + 35);
+                ctx.lineTo(this.x - 6, tineBottom + 35);
+                ctx.closePath();
+                ctx.fillStyle = '#666';
+                ctx.fill();
+                ctx.stroke();
+                
+                // 头部连接
+                ctx.beginPath();
+                ctx.rect(this.x - this.width / 2 - 8, tineTop - 4, this.width + 16, 8);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.stroke();
+                
+                // 绘制标签
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.label, this.x, tineTop - 20);
+                
+                // 绘制频率标签
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#666';
+                ctx.fillText('440 Hz', this.x, tineBottom + 50);
+                
+                // 绘制能量条
+                this.drawEnergyBar();
+                
+                ctx.restore();
+            }
+            
+            drawEnergyBar() {
+                const barY = this.y + this.height / 2 + 60;
+                const barWidth = 80;
+                const barHeight = 8;
+                
+                // 背景条
+                ctx.fillStyle = '#e0e0e0';
+                ctx.fillRect(this.x - barWidth / 2, barY, barWidth, barHeight);
+                
+                // 能量填充
+                const fillWidth = barWidth * this.energy;
+                const gradient = ctx.createLinearGradient(
+                    this.x - barWidth / 2, 0,
+                    this.x + barWidth / 2, 0
+                );
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(this.x - barWidth / 2, barY, fillWidth, barHeight);
+                
+                // 标签
+                ctx.fillStyle = '#666';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`能量: ${Math.round(this.energy * 100)}%`, this.x, barY + 20);
+            }
+            
+            isClicked(mx, my) {
+                return Math.abs(mx - this.x) < 50 && Math.abs(my - this.y) < 70;
+            }
+        }
+        
+        // 粒子类 - 表示空气中的分子
+        class Particle {
+            constructor(x, y) {
+                this.baseX = x;
+                this.baseY = y;
+                this.x = x;
+                this.y = y;
+                this.energy = 0;
+                this.phase = Math.random() * Math.PI * 2;
+            }
+            
+            update(sourceEnergy, sourceX, targetX) {
+                // 计算到源的距离
+                const distToSource = Math.abs(this.x - sourceX);
+                const totalDist = Math.abs(targetX - sourceX);
+                const progress = distToSource / totalDist;
+                
+                // 声波传播延迟
+                const delay = progress * 0.5;
+                const effectiveEnergy = Math.max(0, sourceEnergy - delay) * 0.6;
+                
+                this.energy = this.energy * 0.95 + effectiveEnergy * 0.05;
+                
+                // 振动
+                this.phase += 0.3;
+                const amplitude = this.energy * 10;
+                this.x = this.baseX + Math.sin(this.phase) * amplitude;
+            }
+            
+            draw() {
+                const size = 3 + this.energy * 3;
+                const alpha = 0.3 + this.energy * 0.7;
+                
+                ctx.fillStyle = `rgba(52, 152, 219, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // 声波圈
+        class SoundWave {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.active = true;
+                this.opacity = 1;
+            }
+            
+            update() {
+                this.radius += 3;
+                this.opacity = Math.max(0, 1 - this.radius / 200);
+                
+                if (this.opacity <= 0) {
+                    this.active = false;
+                }
+            }
+            
+            draw() {
+                if (!this.active) return;
+                
+                ctx.strokeStyle = `rgba(102, 126, 234, ${this.opacity * 0.5})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        // 初始化
+        const forkA = new TuningFork(150, 200, '#4A90D9', '音叉 A (点击敲击)', true);
+        const forkB = new TuningFork(650, 200, '#E74C3C', '音叉 B (接收)', false);
+        
+        // 创建粒子网格
+        const particles = [];
+        const rows = 4;
+        const cols = 12;
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                const x = 220 + j * ((580 - 220) / (cols - 1));
+                const y = 140 + i * 40;
+                particles.push(new Particle(x, y));
+            }
+        }
+        
+        let waves = [];
+        let autoMode = false;
+        
+        // 绘制声波传播线
+        function drawPropagationLines() {
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            ctx.beginPath();
+            ctx.moveTo(220, 320);
+            ctx.lineTo(580, 320);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#999';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('声波传播路径', 400, 340);
+        }
+        
+        // 计算音叉B的共振
+        function calculateResonance() {
+            const distance = Math.abs(forkB.x - forkA.x);
+            const energyAtB = forkA.energy * 0.15;
+            
+            if (forkA.energy > 0.1) {
+                forkB.energy += energyAtB * 0.02;
+                forkB.energy = Math.min(forkB.energy, 0.8);
+            }
+        }
+        
+        // 更新状态显示
+        function updateStatus() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (forkA.energy > 0.3 && forkB.energy < 0.1) {
+                statusDot.className = 'status-dot active';
+                statusText.textContent = '🔊 音叉 A 振动中，声波正在传播...';
+            } else if (forkB.energy > 0.3) {
+                statusDot.className = 'status-dot active';
+                statusText.textContent = '✨ 音叉 B 开始共振！能量成功传播！';
+                statusText.style.color = '#27AE60';
+            } else if (forkB.energy > 0.1) {
+                statusDot.className = 'status-dot active';
+                statusText.textContent = '🌊 音叉 B 接收到部分能量，开始轻微振动';
+            } else if (forkA.energy > 0.1) {
+                statusDot.className = 'status-dot active';
+                statusText.textContent = '🔊 音叉 A 振动中...';
+            } else {
+                statusDot.className = 'status-dot';
+                statusText.textContent = '准备就绪 - 点击音叉 A 开始实验';
+                statusText.style.color = '#333';
+            }
+        }
+        
+        // 主动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制传播线
+            drawPropagationLines();
+            
+            // 更新和绘制粒子
+            particles.forEach(p => {
+                p.update(forkA.energy, forkA.x, forkB.x);
+                p.draw();
+            });
+            
+            // 更新和绘制声波
+            waves = waves.filter(w => w.active);
+            waves.forEach(w => {
+                w.update();
+                w.draw();
+            });
+            
+            // 计算共振
+            calculateResonance();
+            
+            // 更新音叉
+            forkA.update();
+            forkB.update();
+            
+            // 绘制音叉
+            forkA.draw();
+            forkB.draw();
+            
+            // 更新状态
+            updateStatus();
+            
+            // 自动演示
+            if (autoMode && forkA.energy < 0.1 && forkB.energy < 0.1) {
+                strikeForkA();
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // 敲击音叉A
+        function strikeForkA() {
+            forkA.strike(1.0);
+            waves.push(new SoundWave(forkA.x, forkA.y));
+        }
+        
+        // 重置
+        function reset() {
+            forkA.energy = 0;
+            forkB.energy = 0;
+            waves = [];
+            autoMode = false;
+            particles.forEach(p => {
+                p.energy = 0;
+                p.x = p.baseX;
+            });
+        }
+        
+        // 自动演示
+        function autoDemo() {
+            reset();
+            autoMode = true;
+        }
+        
+        // 鼠标点击事件
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (forkA.isClicked(x, y)) {
+                strikeForkA();
+            }
+        });
+        
+        // 鼠标移动事件（悬停效果）
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (forkA.isClicked(x, y)) {
+                canvas.style.cursor = 'pointer';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+        });
+        
+        // 启动动画
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>克拉德尼图形实验 - 音频可视化 | Chladni Figures</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        canvas {
+            border: 2px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+            background: #0a0a0a;
+        }
+        
+        .controls {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            min-width: 320px;
+            max-width: 380px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            display: inline-block;
+            margin-left: 10px;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        .presets {
+            margin-top: 15px;
+        }
+        
+        .preset-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .preset-btn:hover {
+            background: #00d4ff;
+            color: #000;
+        }
+        
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(123, 44, 191, 0.1);
+            border-left: 3px solid #7b2cbf;
+            border-radius: 5px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #444;
+            background: transparent;
+            color: #888;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            color: #fff;
+        }
+        
+        .particles-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .particles-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #00d4ff;
+        }
+
+        /* 音频控制面板 */
+        .audio-section {
+            background: rgba(255,215,0,0.05);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .audio-section h3 {
+            color: #ffd700;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .play-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+        
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,212,255,0.4);
+        }
+        
+        .play-btn.playing {
+            background: linear-gradient(135deg, #ff4757, #c44569);
+        }
+        
+        .instrument-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .inst-btn {
+            flex: 1;
+            min-width: 70px;
+            padding: 8px 12px;
+            border: 1px solid #555;
+            background: rgba(255,255,255,0.05);
+            color: #aaa;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .inst-btn:hover {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        
+        .inst-btn.active {
+            background: rgba(255,215,0,0.2);
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .volume-control label {
+            margin: 0;
+            min-width: 50px;
+        }
+        
+        .freq-display {
+            background: rgba(0,212,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .freq-display .hz {
+            font-size: 24px;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        .freq-display .note {
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* 频谱可视化 */
+        .spectrum-container {
+            width: 100%;
+            height: 60px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            margin-top: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #spectrumCanvas {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* 音频输入 */
+        .audio-input-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .mic-btn {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ff6b6b;
+            background: rgba(255,107,107,0.1);
+            color: #ff6b6b;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .mic-btn:hover {
+            background: rgba(255,107,107,0.2);
+        }
+        
+        .mic-btn.active {
+            background: #ff6b6b;
+            color: #fff;
+        }
+        
+        .harmonics-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .harmonics-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #ffd700;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🔊 克拉德尼图形实验</h1>
+    <p class="subtitle">Chladni Figures - 声波振动可视化与音频合成</p>
+    
+    <div class="container">
+        <canvas id="chladniCanvas" width="500" height="500"></canvas>
+        
+        <div class="controls">
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="square">方形板</button>
+                <button class="mode-btn" data-mode="circular">圆形板</button>
+            </div>
+            
+            <div class="control-group">
+                <label>X 方向频率 (m) <span id="mValue" class="value-display">2</span></label>
+                <input type="range" id="freqM" min="1" max="10" value="2" step="1">
+            </div>
+            
+            <div class="control-group">
+                <label>Y 方向频率 (n) <span id="nValue" class="value-display">3</span></label>
+                <input type="range" id="freqN" min="1" max="10" value="3" step="1">
+            </div>
+            
+            <div class="control-group">
+                <label>振动强度 <span id="ampValue" class="value-display">1.0</span></label>
+                <input type="range" id="amplitude" min="0.1" max="2.0" value="1.0" step="0.1">
+            </div>
+            
+            <div class="control-group">
+                <label>显示阈值 <span id="thresholdValue" class="value-display">0.05</span></label>
+                <input type="range" id="threshold" min="0.01" max="0.3" value="0.05" step="0.01">
+            </div>
+            
+            <div class="particles-toggle">
+                <input type="checkbox" id="showParticles" checked>
+                <label for="showParticles" style="margin: 0;">显示颗粒效果</label>
+            </div>
+            
+            <div class="presets">
+                <label>快速预设模式:</label>
+                <button class="preset-btn" data-m="2" data-n="3">2×3</button>
+                <button class="preset-btn" data-m="3" data-n="4">3×4</button>
+                <button class="preset-btn" data-m="4" data-n="5">4×5</button>
+                <button class="preset-btn" data-m="5" data-n="5">5×5</button>
+                <button class="preset-btn" data-m="1" data-n="7">1×7</button>
+                <button class="preset-btn" data-m="6" data-n="2">6×2</button>
+            </div>
+
+            <!-- 音频控制面板 -->
+            <div class="audio-section">
+                <h3>🎵 音源合成</h3>
+                
+                <div class="freq-display">
+                    <div class="hz" id="freqHz">261.6 Hz</div>
+                    <div class="note" id="noteName">C4 (中央C)</div>
+                </div>
+                
+                <button class="play-btn" id="playBtn">▶ 播放音源</button>
+                
+                <label>选择乐器音色:</label>
+                <div class="instrument-selector">
+                    <button class="inst-btn active" data-inst="sine">正弦波</button>
+                    <button class="inst-btn" data-inst="piano">钢琴</button>
+                    <button class="inst-btn" data-inst="violin">小提琴</button>
+                    <button class="inst-btn" data-inst="flute">长笛</button>
+                    <button class="inst-btn" data-inst="guitar">吉他</button>
+                    <button class="inst-btn" data-inst="bell">铃铛</button>
+                </div>
+
+                <div class="harmonics-toggle">
+                    <input type="checkbox" id="enableHarmonics" checked>
+                    <label for="enableHarmonics" style="margin: 0;">启用泛音列</label>
+                </div>
+                
+                <div class="volume-control">
+                    <label>音量:</label>
+                    <input type="range" id="volume" min="0" max="100" value="30">
+                    <span id="volValue" class="value-display">30%</span>
+                </div>
+
+                <label style="margin-top: 15px;">频谱分析:</label>
+                <div class="spectrum-container">
+                    <canvas id="spectrumCanvas" width="280" height="60"></canvas>
+                </div>
+
+                <div class="audio-input-section">
+                    <button class="mic-btn" id="micBtn">🎤 麦克风输入</button>
+                    <p style="font-size: 12px; color: #888; margin-top: 8px; text-align: center;">
+                        使用麦克风捕捉真实乐器声音
+                    </p>
+                </div>
+            </div>
+            
+            <div class="info">
+                <strong>💡 实验原理:</strong><br>
+                克拉德尼图形展示了薄板在特定频率振动时形成的节点图案。
+                调整 m/n 参数生成不同频率，选择乐器音色聆听对应的声波效果，
+                或使用麦克风输入实时分析真实乐器的声音！
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('chladniCanvas');
+        const ctx = canvas.getContext('2d');
+        const spectrumCanvas = document.getElementById('spectrumCanvas');
+        const spectrumCtx = spectrumCanvas.getContext('2d');
+        
+        // 音频上下文
+        let audioContext = null;
+        let oscillator = null;
+        let gainNode = null;
+        let analyser = null;
+        let micStream = null;
+        let micSource = null;
+        let isPlaying = false;
+        let isMicActive = false;
+        
+        // 参数
+        let params = {
+            m: 2,
+            n: 3,
+            amplitude: 1.0,
+            threshold: 0.05,
+            mode: 'square',
+            showParticles: true,
+            instrument: 'sine',
+            volume: 0.3,
+            enableHarmonics: true
+        };
+        
+        // 音符频率映射 (基于 m,n 计算)
+        function calculateFrequency(m, n) {
+            // 基础频率
+            const baseFreq = 110; // A2
+            // 根据模式计算频率 - 使用平方和近似
+            return baseFreq * Math.sqrt(m * m + n * n) / Math.sqrt(13); // 归一化到2,3基准
+        }
+        
+        function getNoteName(freq) {
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const A4 = 440;
+            const semitones = Math.round(12 * Math.log2(freq / A4));
+            const octave = 4 + Math.floor((semitones + 9) / 12);
+            const noteIndex = ((semitones % 12) + 12) % 12;
+            return notes[noteIndex] + octave;
+        }
+        
+        function updateFreqDisplay() {
+            const freq = calculateFrequency(params.m, params.n);
+            document.getElementById('freqHz').textContent = freq.toFixed(1) + ' Hz';
+            document.getElementById('noteName').textContent = getNoteName(freq) + ' (理论值)';
+            return freq;
+        }
+        
+        // 初始化音频上下文
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.8;
+            }
+        }
+        
+        // 乐器音色合成
+        function createInstrumentSound(freq) {
+            initAudio();
+            
+            const oscs = [];
+            const gains = [];
+            
+            // 基础振荡器
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            switch(params.instrument) {
+                case 'piano':
+                    // 钢琴: 锯齿波 + 快速衰减
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(params.volume, audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(params.volume * 0.01, audioContext.currentTime + 1.5);
+                    
+                    // 添加泛音
+                    if (params.enableHarmonics) {
+                        for (let i = 2; i <= 5; i++) {
+                            const hOsc = audioContext.createOscillator();
+                            const hGain = audioContext.createGain();
+                            hOsc.type = 'sine';
+                            hOsc.frequency.value = freq * i;
+                            hGain.gain.setValueAtTime(params.volume / (i * 2), audioContext.currentTime);
+                            hGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
+                            hOsc.connect(hGain);
+                            hGain.connect(analyser);
+                            hOsc.start();
+                            hOsc.stop(audioContext.currentTime + 1.5);
+                        }
+                    }
+                    break;
+                    
+                case 'violin':
+                    // 小提琴: 锯齿波 + 颤音
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = freq;
+                    // 添加颤音
+                    const vibrato = audioContext.createOscillator();
+                    const vibratoGain = audioContext.createGain();
+                    vibrato.frequency.value = 6;
+                    vibratoGain.gain.value = 3;
+                    vibrato.connect(vibratoGain);
+                    vibratoGain.connect(osc.frequency);
+                    vibrato.start();
+                    gain.gain.setValueAtTime(params.volume * 0.7, audioContext.currentTime);
+                    gain.gain.setValueAtTime(params.volume * 0.5, audioContext.currentTime + 0.1);
+                    
+                    // 小提琴泛音
+                    if (params.enableHarmonics) {
+                        for (let i = 2; i <= 8; i++) {
+                            const hOsc = audioContext.createOscillator();
+                            const hGain = audioContext.createGain();
+                            hOsc.type = 'sawtooth';
+                            hOsc.frequency.value = freq * i;
+                            hGain.gain.setValueAtTime(params.volume / (i * 1.5), audioContext.currentTime);
+                            hGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 2);
+                            hOsc.connect(hGain);
+                            hGain.connect(analyser);
+                            hOsc.start();
+                            hOsc.stop(audioContext.currentTime + 2);
+                        }
+                    }
+                    break;
+                    
+                case 'flute':
+                    // 长笛: 正弦波 + 少量噪声
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0, audioContext.currentTime);
+                    gain.gain.linearRampToValueAtTime(params.volume, audioContext.currentTime + 0.05);
+                    gain.gain.setValueAtTime(params.volume * 0.8, audioContext.currentTime + 0.1);
+                    
+                    // 气流噪声
+                    const noise = audioContext.createBufferSource();
+                    const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+                    const noiseData = noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < noiseData.length; i++) {
+                        noiseData[i] = Math.random() * 2 - 1;
+                    }
+                    noise.buffer = noiseBuffer;
+                    const noiseFilter = audioContext.createBiquadFilter();
+                    noiseFilter.type = 'lowpass';
+                    noiseFilter.frequency.value = freq * 2;
+                    const noiseGain = audioContext.createGain();
+                    noiseGain.gain.value = params.volume * 0.05;
+                    noise.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(analyser);
+                    noise.start();
+                    noise.stop(audioContext.currentTime + 1.5);
+                    break;
+                    
+                case 'guitar':
+                    // 吉他: 方波 + 金属质感
+                    osc.type = 'square';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(params.volume, audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(params.volume * 0.01, audioContext.currentTime + 1);
+                    
+                    // 吉他弦的奇次谐波
+                    if (params.enableHarmonics) {
+                        for (let i = 3; i <= 9; i += 2) {
+                            const hOsc = audioContext.createOscillator();
+                            const hGain = audioContext.createGain();
+                            hOsc.type = 'square';
+                            hOsc.frequency.value = freq * i;
+                            hGain.gain.setValueAtTime(params.volume / (i * 2), audioContext.currentTime);
+                            hGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
+                            hOsc.connect(hGain);
+                            hGain.connect(analyser);
+                            hOsc.start();
+                            hOsc.stop(audioContext.currentTime + 1);
+                        }
+                    }
+                    break;
+                    
+                case 'bell':
+                    // 铃铛: 高频正弦 + 快速衰减 + 非谐波
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(params.volume, audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2);
+                    
+                    // 铃铛的非整数倍泛音
+                    if (params.enableHarmonics) {
+                        const bellFreqs = [1, 2.7, 5.4, 8.1];
+                        bellFreqs.forEach((ratio, i) => {
+                            const hOsc = audioContext.createOscillator();
+                            const hGain = audioContext.createGain();
+                            hOsc.type = 'sine';
+                            hOsc.frequency.value = freq * ratio;
+                            hGain.gain.setValueAtTime(params.volume / (i + 2), audioContext.currentTime);
+                            hGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2 - i * 0.2);
+                            hOsc.connect(hGain);
+                            hGain.connect(analyser);
+                            hOsc.start();
+                            hOsc.stop(audioContext.currentTime + 2);
+                        });
+                    }
+                    break;
+                    
+                default: // sine
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.value = params.volume;
+            }
+            
+            osc.connect(gain);
+            gain.connect(analyser);
+            analyser.connect(audioContext.destination);
+            
+            osc.start();
+            
+            // 设置停止时间
+            const duration = params.instrument === 'bell' ? 2 : 1.5;
+            osc.stop(audioContext.currentTime + duration);
+            
+            return { osc, gain };
+        }
+        
+        // 播放/停止音频
+        function toggleAudio() {
+            initAudio();
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            if (isPlaying) {
+                // 停止播放
+                if (oscillator) {
+                    try {
+                        oscillator.osc.stop();
+                    } catch(e) {}
+                }
+                isPlaying = false;
+                document.getElementById('playBtn').textContent = '▶ 播放音源';
+                document.getElementById('playBtn').classList.remove('playing');
+            } else {
+                // 播放
+                const freq = updateFreqDisplay();
+                oscillator = createInstrumentSound(freq);
+                isPlaying = true;
+                document.getElementById('playBtn').textContent = '⏹ 停止播放';
+                document.getElementById('playBtn').classList.add('playing');
+                
+                // 自动停止后更新按钮
+                setTimeout(() => {
+                    isPlaying = false;
+                    document.getElementById('playBtn').textContent = '▶ 播放音源';
+                    document.getElementById('playBtn').classList.remove('playing');
+                }, 2000);
+            }
+        }
+        
+        // 麦克风输入
+        async function toggleMic() {
+            initAudio();
+            
+            if (isMicActive) {
+                // 停止麦克风
+                if (micStream) {
+                    micStream.getTracks().forEach(track => track.stop());
+                }
+                if (micSource) {
+                    micSource.disconnect();
+                }
+                isMicActive = false;
+                document.getElementById('micBtn').textContent = '🎤 麦克风输入';
+                document.getElementById('micBtn').classList.remove('active');
+            } else {
+                try {
+                    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    micSource = audioContext.createMediaStreamSource(micStream);
+                    micSource.connect(analyser);
+                    // 注意：不连接到 destination 避免反馈
+                    isMicActive = true;
+                    document.getElementById('micBtn').textContent = '⏹ 停止麦克风';
+                    document.getElementById('micBtn').classList.add('active');
+                } catch (err) {
+                    alert('无法访问麦克风: ' + err.message);
+                }
+            }
+        }
+        
+        // 绘制频谱
+        function drawSpectrum() {
+            if (!analyser) return;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+            
+            const w = spectrumCanvas.width;
+            const h = spectrumCanvas.height;
+            
+            spectrumCtx.fillStyle = 'rgba(0,0,0,0.3)';
+            spectrumCtx.fillRect(0, 0, w, h);
+            
+            const barWidth = (w / bufferLength) * 2.5;
+            let barHeight;
+            let x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                barHeight = (dataArray[i] / 255) * h;
+                
+                const gradient = spectrumCtx.createLinearGradient(0, h, 0, h - barHeight);
+                gradient.addColorStop(0, '#7b2cbf');
+                gradient.addColorStop(0.5, '#00d4ff');
+                gradient.addColorStop(1, '#ffd700');
+                
+                spectrumCtx.fillStyle = gradient;
+                spectrumCtx.fillRect(x, h - barHeight, barWidth, barHeight);
+                
+                x += barWidth + 1;
+            }
+        }
+        
+        // 粒子系统
+        const particles = [];
+        const numParticles = 8000;
+        
+        // 音频数据影响图案
+        let audioData = {
+            bass: 0,
+            mid: 0,
+            treble: 0,
+            overall: 0
+        };
+        
+        function analyzeAudio() {
+            if (!analyser) return audioData;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+            
+            // 分析不同频段
+            let bass = 0, mid = 0, treble = 0;
+            const bassEnd = Math.floor(bufferLength * 0.1);
+            const midEnd = Math.floor(bufferLength * 0.5);
+            
+            for (let i = 0; i < bassEnd; i++) bass += dataArray[i];
+            for (let i = bassEnd; i < midEnd; i++) mid += dataArray[i];
+            for (let i = midEnd; i < bufferLength; i++) treble += dataArray[i];
+            
+            audioData = {
+                bass: bass / (bassEnd * 255),
+                mid: mid / ((midEnd - bassEnd) * 255),
+                treble: treble / ((bufferLength - midEnd) * 255),
+                overall: (bass + mid + treble) / (bufferLength * 255)
+            };
+            
+            return audioData;
+        }
+        
+        function initParticles() {
+            particles.length = 0;
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({
+                    x: Math.random(),
+                    y: Math.random(),
+                    vx: 0,
+                    vy: 0,
+                    settled: false
+                });
+            }
+        }
+        
+        initParticles();
+        
+        // 克拉德尼函数
+        function chladniSquare(x, y, m, n, audioInfluence) {
+            const base = Math.cos(m * Math.PI * x) * Math.cos(n * Math.PI * y) - 
+                        Math.cos(n * Math.PI * x) * Math.cos(m * Math.PI * y);
+            // 音频影响振幅
+            const modulation = 1 + audioInfluence.overall * 0.5;
+            return base * modulation;
+        }
+        
+        function chladniCircular(x, y, m, n, audioInfluence) {
+            const cx = x - 0.5;
+            const cy = y - 0.5;
+            const r = Math.sqrt(cx * cx + cy * cy) * 2;
+            const theta = Math.atan2(cy, cx);
+            
+            if (r > 1) return 1;
+            
+            // 音频影响频率和形状
+            const freqMod = 1 + audioInfluence.bass * 0.3;
+            const shapeMod = 1 + audioInfluence.mid * 0.2;
+            
+            return Math.sin(m * Math.PI * r * freqMod) * Math.cos(n * theta * shapeMod) * Math.exp(-r * 0.5);
+        }
+        
+        function getAmplitude(x, y) {
+            analyzeAudio();
+            const val = params.mode === 'square' 
+                ? chladniSquare(x, y, params.m, params.n, audioData)
+                : chladniCircular(x, y, params.m, params.n, audioData);
+            return Math.abs(val) * params.amplitude;
+        }
+        
+        function updateParticles() {
+            if (!params.showParticles) return;
+            
+            const dt = 0.016;
+            const damping = 0.95;
+            
+            // 音频影响粒子行为
+            const audioEnergy = audioData.overall;
+            
+            for (let p of particles) {
+                if (p.settled && audioEnergy < 0.1) continue;
+                
+                // 如果音频能量高，重新激活粒子
+                if (audioEnergy > 0.2 && Math.random() < audioEnergy * 0.1) {
+                    p.settled = false;
+                }
+                
+                const amp = getAmplitude(p.x, p.y);
+                
+                const eps = 0.01;
+                const dx = (getAmplitude(p.x + eps, p.y) - getAmplitude(p.x - eps, p.y)) / (2 * eps);
+                const dy = (getAmplitude(p.x, p.y + eps) - getAmplitude(p.x, p.y - eps)) / (2 * eps);
+                
+                const force = -0.5 * (amp + 0.1);
+                p.vx += dx * force * dt;
+                p.vy += dy * force * dt;
+                
+                // 音频带来的随机扰动
+                if (audioEnergy > 0.05) {
+                    p.vx += (Math.random() - 0.5) * audioEnergy * 0.5;
+                    p.vy += (Math.random() - 0.5) * audioEnergy * 0.5;
+                }
+                
+                p.vx *= damping;
+                p.vy *= damping;
+                
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                
+                if (p.x < 0) { p.x = 0; p.vx *= -0.5; }
+                if (p.x > 1) { p.x = 1; p.vx *= -0.5; }
+                if (p.y < 0) { p.y = 0; p.vy *= -0.5; }
+                if (p.y > 1) { p.y = 1; p.vy *= -0.5; }
+                
+                if (amp < params.threshold && Math.abs(p.vx) + Math.abs(p.vy) < 0.001) {
+                    p.settled = true;
+                }
+            }
+        }
+        
+        // 获取颜色 - 根据音频数据变化
+        function getNodeColor(intensity, audioData) {
+            const bass = Math.floor(audioData.bass * 100);
+            const mid = Math.floor(audioData.mid * 100);
+            const treble = Math.floor(audioData.treble * 100);
+            
+            // 动态颜色变化
+            const r = Math.min(255, 100 + bass);
+            const g = Math.min(255, 200 + mid);
+            const b = Math.min(255, 200 + treble);
+            
+            return { r, g, b };
+        }
+        
+        function render() {
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, w, h);
+            
+            const imageData = ctx.createImageData(w, h);
+            const data = imageData.data;
+            
+            // 获取当前音频状态
+            analyzeAudio();
+            
+            for (let py = 0; py < h; py++) {
+                for (let px = 0; px < w; px++) {
+                    const x = px / w;
+                    const y = py / h;
+                    const amp = getAmplitude(x, y);
+                    
+                    const idx = (py * w + px) * 4;
+                    
+                    if (amp < params.threshold) {
+                        const intensity = 1 - amp / params.threshold;
+                        const color = getNodeColor(intensity, audioData);
+                        
+                        data[idx] = color.r * intensity;
+                        data[idx + 1] = color.g * intensity;
+                        data[idx + 2] = color.b * intensity + 50;
+                        data[idx + 3] = 255;
+                    } else {
+                        // 背景随音频变化
+                        const bgMod = 1 + audioData.overall * 2;
+                        const bg = Math.floor((20 + amp * 30) * bgMod);
+                        data[idx] = bg;
+                        data[idx + 1] = bg;
+                        data[idx + 2] = bg + 15 + audioData.treble * 50;
+                        data[idx + 3] = 255;
+                    }
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            
+            if (params.showParticles) {
+                // 粒子颜色也随音频变化
+                const particleBrightness = 150 + audioData.overall * 105;
+                ctx.fillStyle = `rgb(${particleBrightness}, ${particleBrightness}, ${particleBrightness + 50})`;
+                
+                for (let p of particles) {
+                    const px = p.x * w;
+                    const py = p.y * h;
+                    const size = p.settled ? 1.5 + audioData.bass : 1;
+                    ctx.fillRect(px - size/2, py - size/2, size, size);
+                }
+            }
+            
+            // 边框也随音频发光
+            const glowIntensity = 2 + audioData.overall * 3;
+            ctx.strokeStyle = `rgba(0, 212, 255, ${0.5 + audioData.mid * 0.5})`;
+            ctx.lineWidth = glowIntensity;
+            ctx.strokeRect(1, 1, w-2, h-2);
+            
+            // 绘制频谱
+            drawSpectrum();
+        }
+        
+        function animate() {
+            updateParticles();
+            render();
+            requestAnimationFrame(animate);
+        }
+        
+        // 事件监听
+        document.getElementById('freqM').addEventListener('input', (e) => {
+            params.m = parseInt(e.target.value);
+            document.getElementById('mValue').textContent = params.m;
+            initParticles();
+            updateFreqDisplay();
+        });
+        
+        document.getElementById('freqN').addEventListener('input', (e) => {
+            params.n = parseInt(e.target.value);
+            document.getElementById('nValue').textContent = params.n;
+            initParticles();
+            updateFreqDisplay();
+        });
+        
+        document.getElementById('amplitude').addEventListener('input', (e) => {
+            params.amplitude = parseFloat(e.target.value);
+            document.getElementById('ampValue').textContent = params.amplitude.toFixed(1);
+        });
+        
+        document.getElementById('threshold').addEventListener('input', (e) => {
+            params.threshold = parseFloat(e.target.value);
+            document.getElementById('thresholdValue').textContent = params.threshold.toFixed(2);
+        });
+        
+        document.getElementById('showParticles').addEventListener('change', (e) => {
+            params.showParticles = e.target.checked;
+        });
+        
+        document.getElementById('enableHarmonics').addEventListener('change', (e) => {
+            params.enableHarmonics = e.target.checked;
+        });
+        
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.mode = btn.dataset.mode;
+                initParticles();
+            });
+        });
+        
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                params.m = parseInt(btn.dataset.m);
+                params.n = parseInt(btn.dataset.n);
+                document.getElementById('freqM').value = params.m;
+                document.getElementById('freqN').value = params.n;
+                document.getElementById('mValue').textContent = params.m;
+                document.getElementById('nValue').textContent = params.n;
+                initParticles();
+                updateFreqDisplay();
+                
+                // 自动播放对应频率
+                if (!isPlaying) {
+                    toggleAudio();
+                }
+            });
+        });
+        
+        // 乐器选择
+        document.querySelectorAll('.inst-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.inst-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.instrument = btn.dataset.inst;
+            });
+        });
+        
+        // 播放按钮
+        document.getElementById('playBtn').addEventListener('click', toggleAudio);
+        
+        // 麦克风按钮
+        document.getElementById('micBtn').addEventListener('click', toggleMic);
+        
+        // 音量控制
+        document.getElementById('volume').addEventListener('input', (e) => {
+            params.volume = parseInt(e.target.value) / 100;
+            document.getElementById('volValue').textContent = e.target.value + '%';
+            if (gainNode) {
+                gainNode.gain.value = params.volume;
+            }
+        });
+        
+        // 点击画布重新分布粒子
+        canvas.addEventListener('click', () => {
+            initParticles();
+        });
+        
+        // 初始化
+        updateFreqDisplay();
+        animate();
+    </script>
+</body>
+</html>

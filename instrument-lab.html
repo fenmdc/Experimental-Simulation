@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 乐器实验室 - 物理乐器设计与模拟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 8s ease infinite;
+            margin-bottom: 10px;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .header p {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .instrument-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #888;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
+        }
+        
+        .tab-btn .icon {
+            font-size: 1.3em;
+        }
+        
+        .workspace {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instrument-panel {
+            display: none;
+        }
+        
+        .instrument-panel.active {
+            display: block;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .panel-title {
+            font-size: 1.5em;
+            color: #fff;
+        }
+        
+        .canvas-container {
+            background: #0a0a15;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+        }
+        
+        .controls-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .controls-section h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .control-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .control-item label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        
+        .control-item input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control-item input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+        
+        .value-display {
+            float: right;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        
+        .play-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .keyboard-hint {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(78, 205, 196, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #4ecdc4;
+        }
+        
+        .keyboard-hint h4 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+        
+        .key-map {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .key {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.85em;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .info-box {
+            background: rgba(78, 205, 196, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #4ecdc4;
+        }
+        
+        .info-box h3 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #aaa;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+        
+        .oscilloscope {
+            height: 100px;
+            background: #0a0a15;
+            border-radius: 8px;
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #scopeCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .freq-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-family: monospace;
+            color: #4ecdc4;
+            font-size: 1.2em;
+        }
+
+        .drum-pad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .pad {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #444, #333);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+        
+        .pad:hover {
+            border-color: #4ecdc4;
+            transform: scale(1.05);
+        }
+        
+        .pad:active, .pad.active {
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            transform: scale(0.95);
+        }
+        
+        .pad .pad-icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .pad .pad-key {
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        .string-container {
+            position: relative;
+            height: 200px;
+            background: #0a0a15;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+            }
+            
+            .instrument-tabs {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            
+            .tab-btn {
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎵 乐器实验室</h1>
+        <p>物理乐器设计与模拟 · 探索声音的科学</p>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="instrument-tabs">
+                <button class="tab-btn active" data-instrument="monochord">
+                    <span class="icon">🎸</span>
+                    <span>单弦琴</span>
+                </button>
+                <button class="tab-btn" data-instrument="flute">
+                    <span class="icon">🎵</span>
+                    <span>吸管笛</span>
+                </button>
+                <button class="tab-btn" data-instrument="panpipe">
+                    <span class="icon">🎶</span>
+                    <span>排箫</span>
+                </button>
+                <button class="tab-btn" data-instrument="percussion">
+                    <span class="icon">🥁</span>
+                    <span>打击乐</span>
+                </button>
+            </div>
+            
+            <div class="info-box">
+                <h3>💡 使用提示</h3>
+                <p>点击标签切换乐器。每种乐器都可以调节物理参数，观察声音变化。支持鼠标和键盘演奏。</p>
+            </div>
+            
+            <div class="oscilloscope">
+                <canvas id="scopeCanvas"></canvas>
+                <div class="freq-display" id="freqDisplay">0 Hz</div>
+            </div>
+        </div>
+        
+        <div class="workspace">
+            <!-- 单弦琴 -->
+            <div class="instrument-panel active" id="monochord-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">🎸 单弦琴 (Monochord)</h2>
+                </div>
+                
+                <div class="canvas-container">
+                    <div class="string-container" id="stringContainer">
+                        <canvas id="stringCanvas" width="800" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <div class="controls-section">
+                    <h3>⚙️ 物理参数</h3>
+                    <div class="control-grid">
+                        <div class="control-item">
+                            <label>弦长 (cm) <span class="value-display" id="stringLengthVal">60</span></label>
+                            <input type="range" id="stringLength" min="20" max="80" value="60">
+                        </div>
+                        <div class="control-item">
+                            <label>张力 (N) <span class="value-display" id="stringTensionVal">100</span></label>
+                            <input type="range" id="stringTension" min="50" max="200" value="100">
+                        </div>
+                        <div class="control-item">
+                            <label>线密度 (g/m) <span class="value-display" id="stringDensityVal">1.5</span></label>
+                            <input type="range" id="stringDensity" min="0.5" max="5" step="0.1" value="1.5">
+                        </div>
+                        <div class="control-item">
+                            <label>衰减时间 <span class="value-display" id="stringDecayVal">2.0</span></label>
+                            <input type="range" id="stringDecay" min="0.5" max="5" step="0.1" value="2.0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="keyboard-hint">
+                    <h4>🎹 演奏方式</h4>
+                    <p>在琴弦上点击或拖动来"拨动"它。弦的振动频率由物理公式决定：</p>
+                    <p style="margin-top: 8px; font-family: monospace; color: #4ecdc4;">f = (1/2L) × √(T/μ)</p>
+                    <p style="margin-top: 5px; color: #888; font-size: 0.9em;">L=弦长, T=张力, μ=线密度</p>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📚 物理原理</h3>
+                    <p>单弦琴是最古老的实验乐器之一。毕达哥拉斯曾用单弦琴发现了音程与弦长的数学关系。弦的基频与其长度成反比，与张力的平方根成正比。</p>
+                </div>
+            </div>
+            
+            <!-- 吸管笛 -->
+            <div class="instrument-panel" id="flute-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">🎵 吸管笛 (Straw Flute)</h2>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="fluteCanvas" width="800" height="250"></canvas>
+                </div>
+                
+                <div class="controls-section">
+                    <h3>⚙️ 管乐器参数</h3>
+                    <div class="control-grid">
+                        <div class="control-item">
+                            <label>管长 (cm) <span class="value-display" id="fluteLengthVal">20</span></label>
+                            <input type="range" id="fluteLength" min="5" max="40" value="20">
+                        </div>
+                        <div class="control-item">
+                            <label>管径 (mm) <span class="value-display" id="fluteDiameterVal">10</span></label>
+                            <input type="range" id="fluteDiameter" min="5" max="20" value="10">
+                        </div>
+                        <div class="control-item">
+                            <label>吹气力度 <span class="value-display" id="flutePowerVal">50</span></label>
+                            <input type="range" id="flutePower" min="20" max="100" value="50">
+                        </div>
+                        <div class="control-item">
+                            <label>音色亮度 <span class="value-display" id="fluteBrightnessVal">50</span></label>
+                            <input type="range" id="fluteBrightness" min="0" max="100" value="50">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="play-controls">
+                    <button class="btn btn-primary" id="blowFluteBtn">💨 吹奏</button>
+                    <button class="btn btn-secondary" id="stopFluteBtn">⏹ 停止</button>
+                </div>
+                
+                <div class="keyboard-hint">
+                    <h4>🎹 快捷键</h4>
+                    <div class="key-map">
+                        <span class="key">空格</span>
+                        <span>吹奏/停止</span>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📚 边棱音原理</h3>
+                    <p>吸管笛属于边棱音乐器。气流从吹口边缘吹过时，形成周期性的涡旋，激发管内空气柱共振。闭口管（一端封闭）的基频公式为 f = v/4L，其中 v 是声速，L 是管长。</p>
+                </div>
+            </div>
+            
+            <!-- 排箫 -->
+            <div class="instrument-panel" id="panpipe-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">🎶 排箫 (Panpipe)</h2>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="panpipeCanvas" width="800" height="300"></canvas>
+                </div>
+                
+                <div class="controls-section">
+                    <h3>⚙️ 排箫参数</h3>
+                    <div class="control-grid">
+                        <div class="control-item">
+                            <label>管子数量 <span class="value-display" id="pipeCountVal">8</span></label>
+                            <input type="range" id="pipeCount" min="4" max="12" value="8">
+                        </div>
+                        <div class="control-item">
+                            <label>最短管长 (cm) <span class="value-display" id="minPipeLengthVal">8</span></label>
+                            <input type="range" id="minPipeLength" min="5" max="15" value="8">
+                        </div>
+                        <div class="control-item">
+                            <label>音阶类型</label>
+                            <select id="scaleType" style="width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 5px;">
+                                <option value="pentatonic">五声音阶 (中国传统)</option>
+                                <option value="major">大调音阶</option>
+                                <option value="minor">小调音阶</option>
+                                <option value="chromatic">半音阶</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>混响 <span class="value-display" id="panReverbVal">30</span></label>
+                            <input type="range" id="panReverb" min="0" max="100" value="30">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="keyboard-hint">
+                    <h4>🎹 演奏方式</h4>
+                    <div class="key-map">
+                        <span class="key">1</span><span class="key">2</span><span class="key">3</span><span class="key">4</span>
+                        <span class="key">5</span><span class="key">6</span><span class="key">7</span><span class="key">8</span>
+                        <span class="key">9</span><span class="key">0</span><span class="key">-</span><span class="key">=</span>
+                    </div>
+                    <p style="margin-top: 10px; color: #888;">数字键 1-8 对应 8 根管子，越长音越低</p>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📚 排箫历史</h3>
+                    <p>排箫是世界最古老的乐器之一，在中国、希腊、南美等地都有悠久历史。每根管子都是一个闭口管，其音高与管长成反比。排箫音色空灵，常用于表现自然意境。</p>
+                </div>
+            </div>
+            
+            <!-- 打击乐 -->
+            <div class="instrument-panel" id="percussion-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">🥁 打击乐 (Percussion)</h2>
+                </div>
+                
+                <div class="controls-section">
+                    <h3>🎛️ 打击垫</h3>
+                    <div class="drum-pad" id="drumPad">
+                        <div class="pad" data-sound="kick" data-key="q">
+                            <span class="pad-icon">🥁</span>
+                            <span class="pad-key">Q</span>
+                        </div>
+                        <div class="pad" data-sound="snare" data-key="w">
+                            <span class="pad-icon">🥁</span>
+                            <span class="pad-key">W</span>
+                        </div>
+                        <div class="pad" data-sound="hihat" data-key="e">
+                            <span class="pad-icon">🎩</span>
+                            <span class="pad-key">E</span>
+                        </div>
+                        <div class="pad" data-sound="tom" data-key="r">
+                            <span class="pad-icon">🪘</span>
+                            <span class="pad-key">R</span>
+                        </div>
+                        <div class="pad" data-sound="wood" data-key="a">
+                            <span class="pad-icon">🪵</span>
+                            <span class="pad-key">A</span>
+                        </div>
+                        <div class="pad" data-sound="clap" data-key="s">
+                            <span class="pad-icon">👏</span>
+                            <span class="pad-key">S</span>
+                        </div>
+                        <div class="pad" data-sound="bell" data-key="d">
+                            <span class="pad-icon">🔔</span>
+                            <span class="pad-key">D</span>
+                        </div>
+                        <div class="pad" data-sound="cymbal" data-key="f">
+                            <span class="pad-icon">🎐</span>
+                            <span class="pad-key">F</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls-section">
+                    <h3>⚙️ 打击乐参数</h3>
+                    <div class="control-grid">
+                        <div class="control-item">
+                            <label>主音量 <span class="value-display" id="drumVolumeVal">80</span></label>
+                            <input type="range" id="drumVolume" min="0" max="100" value="80">
+                        </div>
+                        <div class="control-item">
+                            <label>混响 <span class="value-display" id="drumReverbVal">40</span></label>
+                            <input type="range" id="drumReverb" min="0" max="100" value="40">
+                        </div>
+                        <div class="control-item">
+                            <label>音高偏移 <span class="value-display" id="drumPitchVal">0</span></label>
+                            <input type="range" id="drumPitch" min="-12" max="12" value="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="keyboard-hint">
+                    <h4>🎹 快捷键</h4>
+                    <div class="key-map">
+                        <span class="key">Q</span><span class="key">W</span><span class="key">E</span><span class="key">R</span>
+                        <span style="margin-left: 10px;">上排</span>
+                    </div>
+                    <div class="key-map" style="margin-top: 5px;">
+                        <span class="key">A</span><span class="key">S</span><span class="key">D</span><span class="key">F</span>
+                        <span style="margin-left: 10px;">下排</span>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📚 打击乐合成</h3>
+                    <p>这里使用物理建模合成技术：底鼓用快速衰减的正弦波，军鼓加白噪声，镲片用高通滤波噪声。每种音色都由频率、衰减、谐波等参数数学建模而成。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 音频上下文
+        let audioContext = null;
+        let analyser = null;
+        let scopeData = null;
+        
+        // 当前活动振荡器
+        let activeOscillators = [];
+        let activeGainNodes = [];
+        
+        // 初始化音频
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                scopeData = new Uint8Array(analyser.frequencyBinCount);
+                analyser.connect(audioContext.destination);
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+        
+        // 示波器绘制
+        function drawScope() {
+            const canvas = document.getElementById('scopeCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置画布尺寸
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            function draw() {
+                requestAnimationFrame(draw);
+                
+                ctx.fillStyle = '#0a0a15';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                if (analyser) {
+                    analyser.getByteTimeDomainData(scopeData);
+                    
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#4ecdc4';
+                    ctx.beginPath();
+                    
+                    const sliceWidth = canvas.width / scopeData.length;
+                    let x = 0;
+                    
+                    for (let i = 0; i < scopeData.length; i++) {
+                        const v = scopeData[i] / 128.0;
+                        const y = v * canvas.height / 2;
+                        
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                        
+                        x += sliceWidth;
+                    }
+                    
+                    ctx.stroke();
+                }
+                
+                // 网格线
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height / 2);
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
+            }
+            
+            draw();
+        }
+        
+        // ========== 单弦琴 ==========
+        class Monochord {
+            constructor() {
+                this.length = 0.6; // 米
+                this.tension = 100; // 牛顿
+                this.density = 0.0015; // kg/m
+                this.decay = 2.0;
+                this.canvas = document.getElementById('stringCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.animationId = null;
+                this.amplitude = 0;
+                this.phase = 0;
+                this.isVibrating = false;
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                const container = document.getElementById('stringContainer');
+                
+                container.addEventListener('mousedown', (e) => this.pluck(e));
+                container.addEventListener('mousemove', (e) => {
+                    if (e.buttons === 1) this.pluck(e);
+                });
+                
+                // 参数控制
+                document.getElementById('stringLength').addEventListener('input', (e) => {
+                    this.length = parseInt(e.target.value) / 100;
+                    document.getElementById('stringLengthVal').textContent = e.target.value;
+                    this.draw();
+                });
+                
+                document.getElementById('stringTension').addEventListener('input', (e) => {
+                    this.tension = parseInt(e.target.value);
+                    document.getElementById('stringTensionVal').textContent = e.target.value;
+                });
+                
+                document.getElementById('stringDensity').addEventListener('input', (e) => {
+                    this.density = parseFloat(e.target.value) / 1000;
+                    document.getElementById('stringDensityVal').textContent = e.target.value;
+                });
+                
+                document.getElementById('stringDecay').addEventListener('input', (e) => {
+                    this.decay = parseFloat(e.target.value);
+                    document.getElementById('stringDecayVal').textContent = e.target.value;
+                });
+            }
+            
+            calculateFrequency() {
+                // f = (1/2L) * sqrt(T/μ)
+                return (1 / (2 * this.length)) * Math.sqrt(this.tension / this.density);
+            }
+            
+            pluck(e) {
+                initAudio();
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+                
+                // 计算拨动位置（相对于弦中心的归一化位置）
+                const centerX = this.canvas.width / 2;
+                const stringWidth = this.length * 500; // 缩放显示
+                const pluckPos = (x - (centerX - stringWidth/2)) / stringWidth;
+                
+                if (pluckPos >= 0 && pluckPos <= 1) {
+                    this.amplitude = Math.min(Math.abs(y - 100) / 50, 1);
+                    this.phase = 0;
+                    this.isVibrating = true;
+                    
+                    // 播放声音
+                    this.playTone();
+                    
+                    if (!this.animationId) {
+                        this.animate();
+                    }
+                }
+            }
+            
+            playTone() {
+                const freq = this.calculateFrequency();
+                document.getElementById('freqDisplay').textContent = freq.toFixed(1) + ' Hz';
+                
+                // 创建带有谐波的弦音
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.value = freq;
+                
+                filter.type = 'lowpass';
+                filter.frequency.value = freq * 8;
+                filter.Q.value = 1;
+                
+                gain.gain.setValueAtTime(this.amplitude * 0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + this.decay);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(analyser);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + this.decay);
+                
+                activeOscillators.push(osc);
+                activeGainNodes.push(gain);
+            }
+            
+            animate() {
+                this.ctx.fillStyle = '#0a0a15';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // 绘制支架
+                this.ctx.strokeStyle = '#444';
+                this.ctx.lineWidth = 4;
+                this.ctx.beginPath();
+                this.ctx.moveTo(50, 150);
+                this.ctx.lineTo(50, 180);
+                this.ctx.moveTo(this.canvas.width - 50, 150);
+                this.ctx.lineTo(this.canvas.width - 50, 180);
+                this.ctx.stroke();
+                
+                // 计算振动
+                if (this.isVibrating) {
+                    this.phase += 0.3;
+                    this.amplitude *= 0.985; // 衰减
+                    
+                    if (this.amplitude < 0.01) {
+                        this.isVibrating = false;
+                    }
+                }
+                
+                // 绘制弦
+                const centerY = 100;
+                const stringWidth = this.length * 500;
+                const startX = (this.canvas.width - stringWidth) / 2;
+                const endX = startX + stringWidth;
+                
+                this.ctx.strokeStyle = '#C0C0C0';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                
+                if (this.isVibrating) {
+                    // 绘制振动波形
+                    for (let x = 0; x <= stringWidth; x += 2) {
+                        const normalizedX = x / stringWidth;
+                        const standingWave = Math.sin(normalizedX * Math.PI) * 
+                                            Math.sin(this.phase) * 
+                                            this.amplitude * 30;
+                        const drawX = startX + x;
+                        const drawY = centerY + standingWave;
+                        
+                        if (x === 0) {
+                            this.ctx.moveTo(drawX, drawY);
+                        } else {
+                            this.ctx.lineTo(drawX, drawY);
+                        }
+                    }
+                } else {
+                    this.ctx.moveTo(startX, centerY);
+                    this.ctx.lineTo(endX, centerY);
+                }
+                
+                this.ctx.stroke();
+                
+                // 绘制琴码
+                this.ctx.fillStyle = '#8B4513';
+                this.ctx.fillRect(startX - 5, 140, 10, 40);
+                this.ctx.fillRect(endX - 5, 140, 10, 40);
+                
+                // 显示参数
+                this.ctx.fillStyle = '#4ecdc4';
+                this.ctx.font = '14px monospace';
+                this.ctx.fillText(`频率: ${this.calculateFrequency().toFixed(1)} Hz`, 20, 30);
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+            
+            draw() {
+                // 触发重绘
+            }
+        }
+        
+        // ========== 吸管笛 ==========
+        class Flute {
+            constructor() {
+                this.length = 0.2; // 米
+                this.diameter = 0.01; // 米
+                this.power = 50;
+                this.brightness = 50;
+                this.isPlaying = false;
+                this.oscillator = null;
+                this.noiseNode = null;
+                this.canvas = document.getElementById('fluteCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.setupEventListeners();
+                this.draw();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('fluteLength').addEventListener('input', (e) => {
+                    this.length = parseInt(e.target.value) / 100;
+                    document.getElementById('fluteLengthVal').textContent = e.target.value;
+                    this.draw();
+                });
+                
+                document.getElementById('fluteDiameter').addEventListener('input', (e) => {
+                    this.diameter = parseInt(e.target.value) / 1000;
+                    document.getElementById('fluteDiameterVal').textContent = e.target.value;
+                    this.draw();
+                });
+                
+                document.getElementById('flutePower').addEventListener('input', (e) => {
+                    this.power = parseInt(e.target.value);
+                    document.getElementById('flutePowerVal').textContent = e.target.value;
+                });
+                
+                document.getElementById('fluteBrightness').addEventListener('input', (e) => {
+                    this.brightness = parseInt(e.target.value);
+                    document.getElementById('fluteBrightnessVal').textContent = e.target.value;
+                });
+                
+                document.getElementById('blowFluteBtn').addEventListener('click', () => this.play());
+                document.getElementById('stopFluteBtn').addEventListener('click', () => this.stop());
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space' && document.getElementById('flute-panel').classList.contains('active')) {
+                        e.preventDefault();
+                        if (this.isPlaying) {
+                            this.stop();
+                        } else {
+                            this.play();
+                        }
+                    }
+                });
+            }
+            
+            calculateFrequency() {
+                // 闭口管：f = v / 4L
+                const speedOfSound = 343; // m/s
+                return speedOfSound / (4 * this.length);
+            }
+            
+            play() {
+                initAudio();
+                
+                if (this.isPlaying) return;
+                
+                this.isPlaying = true;
+                const freq = this.calculateFrequency();
+                document.getElementById('freqDisplay').textContent = freq.toFixed(1) + ' Hz';
+                
+                // 气流噪声
+                const bufferSize = audioContext.sampleRate * 2;
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                this.noiseNode = audioContext.createBufferSource();
+                this.noiseNode.buffer = buffer;
+                this.noiseNode.loop = true;
+                
+                const noiseFilter = audioContext.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = freq;
+                noiseFilter.Q.value = 10;
+                
+                const noiseGain = audioContext.createGain();
+                noiseGain.gain.value = this.power / 500;
+                
+                // 共振音
+                this.oscillator = audioContext.createOscillator();
+                this.oscillator.type = 'sine';
+                this.oscillator.frequency.value = freq;
+                
+                const oscGain = audioContext.createGain();
+                oscGain.gain.value = this.power / 200;
+                
+                // 谐波
+                const harmonics = [];
+                const harmonicGains = [];
+                const numHarmonics = Math.floor(this.brightness / 20) + 1;
+                
+                for (let i = 2; i <= numHarmonics + 1; i++) {
+                    const harm = audioContext.createOscillator();
+                    harm.type = i % 2 === 0 ? 'sine' : 'triangle';
+                    harm.frequency.value = freq * i;
+                    const harmGain = audioContext.createGain();
+                    harmGain.gain.value = (this.power / 400) / i;
+                    harm.connect(harmGain);
+                    harmGain.connect(analyser);
+                    harm.start();
+                    harmonics.push(harm);
+                    harmonicGains.push(harmGain);
+                }
+                
+                this.noiseNode.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(analyser);
+                
+                this.oscillator.connect(oscGain);
+                oscGain.connect(analyser);
+                
+                this.noiseNode.start();
+                this.oscillator.start();
+                
+                this.harmonics = harmonics;
+                this.harmonicGains = harmonicGains;
+                this.noiseGain = noiseGain;
+                this.oscGain = oscGain;
+            }
+            
+            stop() {
+                if (!this.isPlaying) return;
+                
+                this.isPlaying = false;
+                
+                if (this.noiseNode) {
+                    this.noiseNode.stop();
+                    this.noiseNode = null;
+                }
+                
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator = null;
+                }
+                
+                if (this.harmonics) {
+                    this.harmonics.forEach(h => h.stop());
+                    this.harmonics = null;
+                }
+            }
+            
+            draw() {
+                this.ctx.fillStyle = '#0a0a15';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                const pipeLength = this.length * 1500;
+                const pipeWidth = this.diameter * 2000;
+                const startX = (this.canvas.width - pipeLength) / 2;
+                const startY = (this.canvas.height - pipeWidth) / 2;
+                
+                // 绘制管子
+                const gradient = this.ctx.createLinearGradient(startX, startY, startX, startY + pipeWidth);
+                gradient.addColorStop(0, '#444');
+                gradient.addColorStop(0.3, '#888');
+                gradient.addColorStop(0.5, '#aaa');
+                gradient.addColorStop(0.7, '#888');
+                gradient.addColorStop(1, '#444');
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(startX, startY, pipeLength, pipeWidth);
+                
+                // 管口（吹口）
+                this.ctx.fillStyle = '#666';
+                this.ctx.fillRect(startX - 5, startY - 2, 10, pipeWidth + 4);
+                
+                // 闭端
+                this.ctx.fillStyle = '#333';
+                this.ctx.fillRect(startX + pipeLength - 2, startY, 4, pipeWidth);
+                
+                // 绘制声波
+                if (this.isPlaying) {
+                    const time = Date.now() / 1000;
+                    for (let i = 0; i < 5; i++) {
+                        const waveX = startX + (i * pipeLength / 5) + (time * 50) % (pipeLength / 5);
+                        this.ctx.strokeStyle = `rgba(78, 205, 196, ${0.5 - i * 0.1})`;
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.arc(waveX, startY + pipeWidth/2, 10 + i * 5, 0, Math.PI * 2);
+                        this.ctx.stroke();
+                    }
+                }
+                
+                // 标签
+                this.ctx.fillStyle = '#4ecdc4';
+                this.ctx.font = '14px monospace';
+                this.ctx.fillText(`频率: ${this.calculateFrequency().toFixed(1)} Hz`, 20, 30);
+                this.ctx.fillText(`管长: ${(this.length * 100).toFixed(1)} cm`, 20, 50);
+                
+                requestAnimationFrame(() => this.draw());
+            }
+        }
+        
+        // ========== 排箫 ==========
+        class Panpipe {
+            constructor() {
+                this.pipeCount = 8;
+                this.minLength = 0.08;
+                this.scale = 'pentatonic';
+                this.reverb = 30;
+                this.canvas = document.getElementById('panpipeCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.pipes = [];
+                
+                this.setupEventListeners();
+                this.calculatePipes();
+                this.draw();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('pipeCount').addEventListener('input', (e) => {
+                    this.pipeCount = parseInt(e.target.value);
+                    document.getElementById('pipeCountVal').textContent = e.target.value;
+                    this.calculatePipes();
+                });
+                
+                document.getElementById('minPipeLength').addEventListener('input', (e) => {
+                    this.minLength = parseInt(e.target.value) / 100;
+                    document.getElementById('minPipeLengthVal').textContent = e.target.value;
+                    this.calculatePipes();
+                });
+                
+                document.getElementById('scaleType').addEventListener('change', (e) => {
+                    this.scale = e.target.value;
+                    this.calculatePipes();
+                });
+                
+                document.getElementById('panReverb').addEventListener('input', (e) => {
+                    this.reverb = parseInt(e.target.value);
+                    document.getElementById('panReverbVal').textContent = e.target.value;
+                });
+                
+                this.canvas.addEventListener('click', (e) => this.onCanvasClick(e));
+                
+                document.addEventListener('keydown', (e) => {
+                    if (document.getElementById('panpipe-panel').classList.contains('active')) {
+                        const key = e.key;
+                        const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
+                        const index = keys.indexOf(key);
+                        if (index >= 0 && index < this.pipeCount) {
+                            this.playPipe(index);
+                        }
+                    }
+                });
+            }
+            
+            calculatePipes() {
+                this.pipes = [];
+                const speedOfSound = 343;
+                const baseFreq = speedOfSound / (4 * this.minLength);
+                
+                // 音阶比例
+                const scaleRatios = {
+                    pentatonic: [1, 9/8, 5/4, 3/2, 5/3, 2, 9/4, 5/2, 3, 10/3, 4, 9/2],
+                    major: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8, 2, 9/4, 5/2, 8/3, 3],
+                    minor: [1, 9/8, 6/5, 4/3, 3/2, 8/5, 9/5, 2, 9/4, 12/5, 8/3, 9/2],
+                    chromatic: Array.from({length: 12}, (_, i) => Math.pow(2, i/12))
+                };
+                
+                const ratios = scaleRatios[this.scale] || scaleRatios.pentatonic;
+                
+                for (let i = 0; i < this.pipeCount; i++) {
+                    const ratio = ratios[i % ratios.length] * Math.pow(2, Math.floor(i / ratios.length));
+                    const freq = baseFreq / ratio;
+                    const length = speedOfSound / (4 * freq);
+                    
+                    this.pipes.push({
+                        freq,
+                        length,
+                        note: this.getNoteName(freq)
+                    });
+                }
+            }
+            
+            getNoteName(freq) {
+                const A4 = 440;
+                const semitones = 12 * Math.log2(freq / A4);
+                const notes = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+                const octave = Math.floor((semitones + 57) / 12);
+                const noteIndex = Math.round(semitones) % 12;
+                return notes[(noteIndex + 12) % 12] + octave;
+            }
+            
+            playPipe(index) {
+                initAudio();
+                
+                if (index < 0 || index >= this.pipes.length) return;
+                
+                const pipe = this.pipes[index];
+                document.getElementById('freqDisplay').textContent = pipe.freq.toFixed(1) + ' Hz';
+                
+                // 创建声音
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+                
+                osc.type = 'sine';
+                osc.frequency.value = pipe.freq;
+                
+                filter.type = 'lowpass';
+                filter.frequency.value = pipe.freq * 4;
+                
+                // 包络
+                const now = audioContext.currentTime;
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.4, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5 + this.reverb / 50);
+                
+                // 添加一些谐波使声音更丰富
+                const harmOsc = audioContext.createOscillator();
+                const harmGain = audioContext.createGain();
+                harmOsc.type = 'triangle';
+                harmOsc.frequency.value = pipe.freq * 3;
+                harmGain.gain.value = 0.05;
+                harmOsc.connect(harmGain);
+                harmGain.connect(filter);
+                harmOsc.start();
+                harmOsc.stop(now + 2);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(analyser);
+                
+                osc.start();
+                osc.stop(now + 2 + this.reverb / 50);
+                
+                // 视觉反馈
+                this.highlightPipe = index;
+                setTimeout(() => { this.highlightPipe = -1; }, 200);
+            }
+            
+            onCanvasClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+                
+                const pipeWidth = 60;
+                const gap = 20;
+                const totalWidth = this.pipeCount * (pipeWidth + gap) - gap;
+                const startX = (this.canvas.width - totalWidth) / 2;
+                
+                for (let i = 0; i < this.pipeCount; i++) {
+                    const pipeX = startX + i * (pipeWidth + gap);
+                    if (x >= pipeX && x <= pipeX + pipeWidth) {
+                        this.playPipe(i);
+                        break;
+                    }
+                }
+            }
+            
+            draw() {
+                this.ctx.fillStyle = '#0a0a15';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                const pipeWidth = 60;
+                const gap = 20;
+                const totalWidth = this.pipeCount * (pipeWidth + gap) - gap;
+                const startX = (this.canvas.width - totalWidth) / 2;
+                const baseY = 250;
+                
+                this.pipes.forEach((pipe, i) => {
+                    const pipeHeight = pipe.length * 800;
+                    const x = startX + i * (pipeWidth + gap);
+                    const y = baseY - pipeHeight;
+                    
+                    // 管子渐变
+                    const gradient = this.ctx.createLinearGradient(x, y, x + pipeWidth, y);
+                    gradient.addColorStop(0, '#5d4e37');
+                    gradient.addColorStop(0.3, '#8b7355');
+                    gradient.addColorStop(0.5, '#a0826d');
+                    gradient.addColorStop(0.7, '#8b7355');
+                    gradient.addColorStop(1, '#5d4e37');
+                    
+                    this.ctx.fillStyle = gradient;
+                    
+                    // 高亮效果
+                    if (i === this.highlightPipe) {
+                        this.ctx.shadowColor = '#4ecdc4';
+                        this.ctx.shadowBlur = 20;
+                    } else {
+                        this.ctx.shadowBlur = 0;
+                    }
+                    
+                    this.ctx.fillRect(x, y, pipeWidth, pipeHeight);
+                    
+                    // 管口
+                    this.ctx.fillStyle = '#3d3d3d';
+                    this.ctx.fillRect(x - 2, y - 3, pipeWidth + 4, 6);
+                    
+                    // 标签
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = 'bold 14px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText((i + 1).toString(), x + pipeWidth/2, baseY + 25);
+                    
+                    this.ctx.font = '12px monospace';
+                    this.ctx.fillStyle = '#4ecdc4';
+                    this.ctx.fillText(pipe.note, x + pipeWidth/2, y - 10);
+                });
+                
+                this.ctx.shadowBlur = 0;
+                
+                requestAnimationFrame(() => this.draw());
+            }
+        }
+        
+        // ========== 打击乐 ==========
+        class Percussion {
+            constructor() {
+                this.volume = 0.8;
+                this.reverb = 40;
+                this.pitchShift = 0;
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                // 鼓垫点击
+                document.querySelectorAll('.pad').forEach(pad => {
+                    pad.addEventListener('mousedown', () => {
+                        const sound = pad.dataset.sound;
+                        this.play(sound);
+                        pad.classList.add('active');
+                    });
+                    
+                    pad.addEventListener('mouseup', () => {
+                        pad.classList.remove('active');
+                    });
+                    
+                    pad.addEventListener('mouseleave', () => {
+                        pad.classList.remove('active');
+                    });
+                });
+                
+                // 键盘
+                document.addEventListener('keydown', (e) => {
+                    if (document.getElementById('percussion-panel').classList.contains('active')) {
+                        const pad = document.querySelector(`.pad[data-key="${e.key.toLowerCase()}"]`);
+                        if (pad) {
+                            pad.classList.add('active');
+                            this.play(pad.dataset.sound);
+                        }
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    const pad = document.querySelector(`.pad[data-key="${e.key.toLowerCase()}"]`);
+                    if (pad) {
+                        pad.classList.remove('active');
+                    }
+                });
+                
+                // 参数
+                document.getElementById('drumVolume').addEventListener('input', (e) => {
+                    this.volume = parseInt(e.target.value) / 100;
+                    document.getElementById('drumVolumeVal').textContent = e.target.value;
+                });
+                
+                document.getElementById('drumReverb').addEventListener('input', (e) => {
+                    this.reverb = parseInt(e.target.value);
+                    document.getElementById('drumReverbVal').textContent = e.target.value;
+                });
+                
+                document.getElementById('drumPitch').addEventListener('input', (e) => {
+                    this.pitchShift = parseInt(e.target.value);
+                    document.getElementById('drumPitchVal').textContent = e.target.value > 0 ? '+' + e.target.value : e.target.value;
+                });
+            }
+            
+            getPitchMultiplier() {
+                return Math.pow(2, this.pitchShift / 12);
+            }
+            
+            play(sound) {
+                initAudio();
+                
+                const now = audioContext.currentTime;
+                const pitchMult = this.getPitchMultiplier();
+                
+                switch(sound) {
+                    case 'kick':
+                        this.playKick(now, pitchMult);
+                        break;
+                    case 'snare':
+                        this.playSnare(now, pitchMult);
+                        break;
+                    case 'hihat':
+                        this.playHihat(now, pitchMult);
+                        break;
+                    case 'tom':
+                        this.playTom(now, pitchMult);
+                        break;
+                    case 'wood':
+                        this.playWood(now, pitchMult);
+                        break;
+                    case 'clap':
+                        this.playClap(now, pitchMult);
+                        break;
+                    case 'bell':
+                        this.playBell(now, pitchMult);
+                        break;
+                    case 'cymbal':
+                        this.playCymbal(now, pitchMult);
+                        break;
+                }
+                
+                document.getElementById('freqDisplay').textContent = sound.toUpperCase();
+            }
+            
+            playKick(now, pitchMult) {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.frequency.setValueAtTime(150 * pitchMult, now);
+                osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
+                
+                gain.gain.setValueAtTime(this.volume * 0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                
+                osc.connect(gain);
+                gain.connect(analyser);
+                
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+            
+            playSnare(now, pitchMult) {
+                // 正弦波部分
+                const osc = audioContext.createOscillator();
+                const oscGain = audioContext.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200 * pitchMult, now);
+                
+                oscGain.gain.setValueAtTime(this.volume * 0.4, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                
+                // 噪声部分
+                const bufferSize = audioContext.sampleRate * 0.5;
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                const noise = audioContext.createBufferSource();
+                noise.buffer = buffer;
+                
+                const noiseFilter = audioContext.createBiquadFilter();
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 1000;
+                
+                const noiseGain = audioContext.createGain();
+                noiseGain.gain.setValueAtTime(this.volume * 0.6, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                
+                osc.connect(oscGain);
+                oscGain.connect(analyser);
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(analyser);
+                
+                osc.start(now);
+                osc.stop(now + 0.3);
+                noise.start(now);
+            }
+            
+            playHihat(now, pitchMult) {
+                const bufferSize = audioContext.sampleRate * 0.2;
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                const noise = audioContext.createBufferSource();
+                noise.buffer = buffer;
+                
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 8000 * pitchMult;
+                
+                const gain = audioContext.createGain();
+                gain.gain.setValueAtTime(this.volume * 0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(analyser);
+                
+                noise.start(now);
+            }
+            
+            playTom(now, pitchMult) {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.frequency.setValueAtTime(100 * pitchMult, now);
+                osc.frequency.exponentialRampToValueAtTime(50 * pitchMult, now + 0.4);
+                
+                gain.gain.setValueAtTime(this.volume * 0.7, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(analyser);
+                
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+            
+            playWood(now, pitchMult) {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800 * pitchMult, now);
+                
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 2000;
+                
+                gain.gain.setValueAtTime(this.volume * 0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(analyser);
+                
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+            
+            playClap(now, pitchMult) {
+                for (let i = 0; i < 4; i++) {
+                    const delay = i * 0.01;
+                    const bufferSize = audioContext.sampleRate * 0.2;
+                    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let j = 0; j < bufferSize; j++) {
+                        data[j] = (Math.random() * 2 - 1) * (1 - j / bufferSize);
+                    }
+                    
+                    const noise = audioContext.createBufferSource();
+                    noise.buffer = buffer;
+                    
+                    const filter = audioContext.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.value = 1500 * pitchMult;
+                    filter.Q.value = 1;
+                    
+                    const gain = audioContext.createGain();
+                    gain.gain.setValueAtTime(this.volume * 0.3 * (1 - i * 0.2), now + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.15);
+                    
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(analyser);
+                    
+                    noise.start(now + delay);
+                }
+            }
+            
+            playBell(now, pitchMult) {
+                const baseFreq = 500 * pitchMult;
+                const harmonics = [1, 2, 3, 4.2, 5.4];
+                
+                harmonics.forEach((h, i) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    
+                    osc.frequency.value = baseFreq * h;
+                    
+                    gain.gain.setValueAtTime(this.volume * 0.2 / (i + 1), now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2 + this.reverb / 30);
+                    
+                    osc.connect(gain);
+                    gain.connect(analyser);
+                    
+                    osc.start(now);
+                    osc.stop(now + 3);
+                });
+            }
+            
+            playCymbal(now, pitchMult) {
+                const bufferSize = audioContext.sampleRate * 2;
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 0.5);
+                }
+                
+                const noise = audioContext.createBufferSource();
+                noise.buffer = buffer;
+                
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 3000 * pitchMult;
+                
+                const gain = audioContext.createGain();
+                gain.gain.setValueAtTime(this.volume * 0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5 + this.reverb / 20);
+                
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(analyser);
+                
+                noise.start(now);
+            }
+        }
+        
+        // ========== 标签切换 ==========
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const panels = document.querySelectorAll('.instrument-panel');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const instrument = tab.dataset.instrument;
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    panels.forEach(p => p.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${instrument}-panel`).classList.add('active');
+                });
+            });
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            setupTabs();
+            drawScope();
+            
+            // 初始化乐器
+            new Monochord();
+            new Flute();
+            new Panpipe();
+            new Percussion();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多普勒效应 - 旋转小号手实验</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(0, 150, 255, 0.5);
+        }
+        
+        .subtitle {
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        #canvas {
+            border: 2px solid #333;
+            border-radius: 10px;
+            background: #0a0a15;
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.3);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .control-group {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+        
+        .value-display {
+            display: inline-block;
+            margin-left: 10px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        #startBtn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        #startBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        #stopBtn {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            color: white;
+        }
+        
+        #stopBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(244, 67, 54, 0.4);
+        }
+        
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 150, 255, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #0096ff;
+            max-width: 800px;
+        }
+        
+        .info-panel h3 {
+            margin-bottom: 10px;
+            color: #0096ff;
+        }
+        
+        .info-panel p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+        
+        .wave-visual {
+            margin-top: 15px;
+            height: 60px;
+            background: #0a0a15;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #4CAF50;
+        }
+        
+        .status.stopped {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎺 多普勒效应演示</h1>
+    <p class="subtitle">旋转小号手实验 - 观察音调如何随相对运动变化</p>
+    
+    <canvas id="canvas" width="800" height="400"></canvas>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>旋转速度 (RPM) <span class="value-display" id="speedVal">30</span></label>
+            <input type="range" id="speed" min="0" max="100" value="30">
+        </div>
+        <div class="control-group">
+            <label>旋转半径 <span class="value-display" id="radiusVal">150</span></label>
+            <input type="range" id="radius" min="50" max="250" value="150">
+        </div>
+        <div class="control-group">
+            <label>基础频率 (Hz) <span class="value-display" id="freqVal">440</span></label>
+            <input type="range" id="frequency" min="200" max="800" value="440">
+        </div>
+        <div class="control-group">
+            <label>声速 (m/s) <span class="value-display" id="soundSpeedVal">343</span></label>
+            <input type="range" id="soundSpeed" min="300" max="400" value="343">
+        </div>
+    </div>
+    
+    <div class="btn-group">
+        <button id="startBtn">▶ 开始实验</button>
+        <button id="stopBtn">⏹ 停止</button>
+    </div>
+    
+    <div class="status stopped" id="status">状态: 已停止</div>
+    
+    <div class="info-panel">
+        <h3>📚 多普勒效应原理</h3>
+        <p>
+            当波源和观察者有相对运动时，观察到的频率会发生变化。
+            <br><br>
+            <strong>靠近时：</strong>声波被压缩，频率升高，音调变高 🔊⬆️
+            <br>
+            <strong>远离时：</strong>声波被拉伸，频率降低，音调变低 🔊⬇️
+            <br><br>
+            <strong>观察到的频率公式：</strong> f' = f × (v / (v ∓ vₛ))
+            <br>
+            其中 v 是声速，vₛ 是声源速度，靠近时用减号，远离时用加号。
+        </p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 状态
+        let isRunning = false;
+        let angle = 0;
+        let audioContext = null;
+        let oscillator = null;
+        let gainNode = null;
+        
+        // 参数
+        let rotationSpeed = 30; // RPM
+        let radius = 150;
+        let baseFreq = 440;
+        let soundSpeed = 343; // m/s
+        
+        // 观察者位置（固定在右侧）
+        const observer = { x: 650, y: 200 };
+        const center = { x: 300, y: 200 };
+        
+        // 波浪效果
+        let waves = [];
+        
+        // 更新显示值
+        function updateDisplays() {
+            document.getElementById('speedVal').textContent = rotationSpeed;
+            document.getElementById('radiusVal').textContent = radius;
+            document.getElementById('freqVal').textContent = baseFreq;
+            document.getElementById('soundSpeedVal').textContent = soundSpeed;
+        }
+        
+        // 绑定控件
+        document.getElementById('speed').addEventListener('input', (e) => {
+            rotationSpeed = parseInt(e.target.value);
+            updateDisplays();
+        });
+        
+        document.getElementById('radius').addEventListener('input', (e) => {
+            radius = parseInt(e.target.value);
+            updateDisplays();
+        });
+        
+        document.getElementById('frequency').addEventListener('input', (e) => {
+            baseFreq = parseInt(e.target.value);
+            updateDisplays();
+            if (oscillator) {
+                oscillator.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+            }
+        });
+        
+        document.getElementById('soundSpeed').addEventListener('input', (e) => {
+            soundSpeed = parseInt(e.target.value);
+            updateDisplays();
+        });
+        
+        // 初始化音频
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = baseFreq;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+        }
+        
+        // 计算多普勒频移
+        function calculateDoppler(trumpeter) {
+            // 计算径向速度分量
+            const dx = observer.x - trumpeter.x;
+            const dy = observer.y - trumpeter.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // 单位方向向量
+            const nx = dx / distance;
+            const ny = dy / distance;
+            
+            // 计算线速度 (m/s)
+            // RPM 转 rad/s: ω = 2π × RPM / 60
+            const omega = 2 * Math.PI * rotationSpeed / 60;
+            const v_linear = omega * (radius / 100); // 假设 100px = 1m
+            
+            // 速度向量
+            const vx = -v_linear * Math.sin(angle);
+            const vy = v_linear * Math.cos(angle);
+            
+            // 径向速度（朝向观察者为正）
+            const v_radial = vx * nx + vy * ny;
+            
+            // 多普勒效应公式
+            // f' = f × v / (v - v_source_towards_observer)
+            const dopplerFactor = soundSpeed / (soundSpeed - v_radial);
+            const perceivedFreq = baseFreq * dopplerFactor;
+            
+            return { 
+                frequency: perceivedFreq, 
+                v_radial, 
+                distance,
+                dopplerFactor 
+            };
+        }
+        
+        // 绘制场景
+        function draw() {
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制网格
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+            
+            // 绘制旋转轨迹
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 计算小号手位置
+            const trumpeter = {
+                x: center.x + radius * Math.cos(angle),
+                y: center.y + radius * Math.sin(angle)
+            };
+            
+            // 绘制声波
+            if (isRunning) {
+                // 添加新波
+                if (Math.random() < 0.3) {
+                    waves.push({
+                        x: trumpeter.x,
+                        y: trumpeter.y,
+                        radius: 10,
+                        alpha: 1
+                    });
+                }
+            }
+            
+            // 更新和绘制波
+            waves = waves.filter(wave => {
+                wave.radius += 3;
+                wave.alpha -= 0.01;
+                
+                if (wave.alpha <= 0) return false;
+                
+                ctx.strokeStyle = `rgba(0, 150, 255, ${wave.alpha * 0.5})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                return true;
+            });
+            
+            // 绘制中心点
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制观察者（耳朵）
+            ctx.fillStyle = '#4CAF50';
+            ctx.beginPath();
+            ctx.arc(observer.x, observer.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制耳朵图标
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('👂', observer.x, observer.y);
+            
+            // 绘制观察者标签
+            ctx.fillStyle = '#4CAF50';
+            ctx.font = '12px Arial';
+            ctx.fillText('观察者', observer.x, observer.y + 35);
+            
+            // 绘制连线
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(trumpeter.x, trumpeter.y);
+            ctx.lineTo(observer.x, observer.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 绘制小号手
+            ctx.fillStyle = isRunning ? '#FFD700' : '#888';
+            ctx.beginPath();
+            ctx.arc(trumpeter.x, trumpeter.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制小号手图标
+            ctx.fillStyle = '#000';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎺', trumpeter.x, trumpeter.y);
+            
+            // 绘制速度箭头
+            if (isRunning && rotationSpeed > 0) {
+                const arrowLen = 40;
+                const arrowAngle = angle + Math.PI / 2;
+                const arrowX = trumpeter.x + arrowLen * Math.cos(arrowAngle);
+                const arrowY = trumpeter.y + arrowLen * Math.sin(arrowAngle);
+                
+                ctx.strokeStyle = '#f44336';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(trumpeter.x, trumpeter.y);
+                ctx.lineTo(arrowX, arrowY);
+                ctx.stroke();
+                
+                // 箭头头部
+                ctx.beginPath();
+                ctx.arc(arrowX, arrowY, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 计算并显示多普勒数据
+            const dopplerData = calculateDoppler(trumpeter);
+            
+            // 绘制信息面板
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(520, 20, 260, 140);
+            ctx.strokeStyle = '#0096ff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(520, 20, 260, 140);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('实时数据', 530, 40);
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#aaa';
+            ctx.fillText(`基础频率: ${baseFreq} Hz`, 530, 60);
+            
+            const freqColor = dopplerData.frequency > baseFreq ? '#4CAF50' : 
+                             dopplerData.frequency < baseFreq ? '#f44336' : '#fff';
+            ctx.fillStyle = freqColor;
+            ctx.font = 'bold 13px Arial';
+            ctx.fillText(`感知频率: ${dopplerData.frequency.toFixed(1)} Hz`, 530, 80);
+            
+            ctx.fillStyle = '#aaa';
+            ctx.font = '12px Arial';
+            ctx.fillText(`径向速度: ${dopplerData.v_radial.toFixed(1)} m/s`, 530, 100);
+            ctx.fillText(`距离: ${(dopplerData.distance / 100).toFixed(2)} m`, 530, 120);
+            
+            // 运动状态指示
+            const movingToward = dopplerData.v_radial > 0;
+            ctx.fillStyle = movingToward ? '#4CAF50' : '#f44336';
+            ctx.fillText(movingToward ? '🔵 正在靠近' : '🔴 正在远离', 530, 140);
+            
+            // 更新音频频率
+            if (isRunning && oscillator) {
+                const now = audioContext.currentTime;
+                oscillator.frequency.setTargetAtTime(dopplerData.frequency, now, 0.1);
+            }
+        }
+        
+        // 动画循环
+        function animate() {
+            if (isRunning) {
+                // 更新角度 (RPM 转 rad/frame, 假设60fps)
+                angle += (2 * Math.PI * rotationSpeed / 60) / 60;
+            }
+            
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        // 按钮事件
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                document.getElementById('status').textContent = '状态: 运行中 🔊';
+                document.getElementById('status').classList.remove('stopped');
+                
+                if (!audioContext) {
+                    initAudio();
+                } else if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
+        });
+        
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            isRunning = false;
+            document.getElementById('status').textContent = '状态: 已停止';
+            document.getElementById('status').classList.add('stopped');
+            
+            if (audioContext) {
+                audioContext.suspend();
+            }
+        });
+        
+        // 启动
+        updateDisplays();
+        animate();
+    </script>
+</body>
+</html>
