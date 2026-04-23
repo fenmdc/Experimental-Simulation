@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英皇钢琴乐理考级 - 讲解与模拟练习器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --secondary: #f59e0b;
+            --bg-dark: #1e293b;
+            --bg-card: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #475569;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+        }
+        header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        header p { color: var(--text-muted); font-size: 1.1em; }
+        
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        .card h2 { color: var(--secondary); margin-bottom: 15px; font-size: 1.5em; }
+        .card h3 { color: var(--primary); margin: 20px 0 10px; font-size: 1.2em; }
+        
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .topic-card {
+            background: linear-gradient(145deg, #3d4a5f, #2d3748);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .topic-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+        }
+        .topic-card h4 { color: var(--secondary); margin-bottom: 10px; font-size: 1.1em; }
+        .topic-card p { color: var(--text-muted); font-size: 0.9em; }
+        .topic-card .progress-bar {
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        .topic-card .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+        
+        .lesson-content { line-height: 1.8; }
+        .lesson-content p { margin-bottom: 15px; }
+        
+        .quiz-container { max-width: 800px; margin: 0 auto; }
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .quiz-option {
+            background: var(--bg-dark);
+            border: 2px solid var(--border);
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        .quiz-option:hover { border-color: var(--primary); background: rgba(79, 70, 229, 0.1); }
+        .quiz-option.correct { border-color: var(--success); background: rgba(16, 185, 129, 0.2); }
+        .quiz-option.wrong { border-color: var(--error); background: rgba(239, 68, 68, 0.2); }
+        .quiz-option.disabled { cursor: not-allowed; opacity: 0.7; }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            margin: 10px 5px;
+        }
+        .btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary { background: var(--bg-dark); border: 2px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); }
+        
+        .explanation {
+            background: rgba(79, 70, 229, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            margin-top: 20px;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+        .explanation.show { display: block; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(145deg, #3d4a5f, #2d3748);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-card .number { font-size: 2.5em; font-weight: bold; color: var(--secondary); }
+        .stat-card label { color: var(--text-muted); font-size: 0.9em; }
+        
+        .custom-plan { margin-top: 20px; }
+        .plan-item {
+            background: var(--bg-dark);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .plan-item input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .plan-item.completed { opacity: 0.6; text-decoration: line-through; }
+        
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .back-btn:hover { color: var(--primary); }
+        
+        .chord-diagram { text-align: center; margin: 20px 0; }
+        .chord-notes { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .chord-note {
+            padding: 10px 20px;
+            background: var(--bg-dark);
+            border-radius: 6px;
+            border: 2px solid var(--border);
+        }
+        
+        .signature-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .signature-item {
+            background: var(--bg-dark);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .signature-item:hover { border-color: var(--primary); transform: scale(1.05); }
+        .signature-item .sharps-flats { font-size: 1.5em; color: var(--secondary); margin-bottom: 5px; }
+        
+        .term-card {
+            background: var(--bg-dark);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .term-card .term { font-weight: bold; color: var(--secondary); font-style: italic; }
+        .term-card .meaning { color: var(--text-muted); }
+        
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .level-btn {
+            padding: 10px 25px;
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .level-btn:hover, .level-btn.active { background: var(--primary); }
+        .level-info {
+            background: rgba(79, 70, 229, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+        .level-info.show { display: block; }
+        .level-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            background: var(--secondary);
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+            color: #1e293b;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.8em; }
+            .topic-grid { grid-template-columns: 1fr; }
+            .quiz-options { grid-template-columns: 1fr; }
+            .signature-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎹 英皇钢琴乐理考级</h1>
+            <p>ABRSM Music Theory - 讲解与模拟练习器</p>
+        </header>
+        
+        <div class="nav-tabs">
+            <button class="nav-btn" onclick="switchTab('home', this)">🏠 首页</button>
+            <button class="nav-btn" onclick="switchTab('learn', this)">📚 学习讲解</button>
+            <button class="nav-btn" onclick="switchTab('practice', this)">✏️ 模拟练习</button>
+            <button class="nav-btn" onclick="switchTab('plan', this)">📋 学习计划</button>
+            <button class="nav-btn" onclick="switchTab('progress', this)">📊 学习进度</button>
+        </div>
+        
+        <!-- 首页 -->
+        <div id="home" class="section">
+            <div class="card">
+                <h2>🎯 选择学习等级</h2>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">英皇乐理考级分为5个等级，请选择适合你的等级：</p>
+                
+                <div class="level-selector">
+                    <button class="level-btn" onclick="selectLevel(1)">1级 - 入门</button>
+                    <button class="level-btn" onclick="selectLevel(2)">2级 - 基础</button>
+                    <button class="level-btn" onclick="selectLevel(3)">3级 - 进阶</button>
+                    <button class="level-btn" onclick="selectLevel(4)">4级 - 中级</button>
+                    <button class="level-btn" onclick="selectLevel(5)">5级 - 高级</button>
+                </div>
+                
+                <div id="level-info-container">
+                    <div class="level-info" id="level-info-1">
+                        <strong>🎵 Level 1 入门</strong><br>
+                        基础音符、简单的节拍、基本术语。适合完全没有乐理基础的学习者。
+                        <br><strong>考试内容：</strong>音符时值、休止符、简单拍号、基础音乐术语
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>欢迎开始英皇乐理学习之旅</h2>
+                <p>英皇考级（ABRSM）是全球最权威的音乐考试之一。本应用涵盖1-5级乐理知识。</p>
+                <br>
+                <h3>📌 快速开始 <span id="current-level-tag" class="level-tag">当前等级：1级</span></h3>
+                <div class="topic-grid" id="home-topics"></div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card"><div class="number" id="stat-total">0</div><label>已完成练习</label></div>
+                <div class="stat-card"><div class="number" id="stat-correct">0%</div><label>正确率</label></div>
+                <div class="stat-card"><div class="number" id="stat-streak">0</div><label>连续正确</label></div>
+                <div class="stat-card"><div class="number" id="stat-level">1</div><label>当前等级</label></div>
+            </div>
+        </div>
+        
+        <!-- 学习讲解 -->
+        <div id="learn" class="section">
+            <div id="learn-list">
+                <div class="card">
+                    <h2>选择学习主题 <span id="learn-level-display" class="level-tag">等级1</span></h2>
+                    <div class="topic-grid" id="learn-topics"></div>
+                </div>
+            </div>
+            
+            <div id="lesson-detail" style="display: none;">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+        
+        <!-- 模拟练习 -->
+        <div id="practice" class="section">
+            <div class="card quiz-container" id="practice-start">
+                <h2>🎯 模拟练习 <span id="practice-level-tag" class="level-tag">等级1</span></h2>
+                
+                <!-- 难度和数量设置 -->
+                <div style="margin: 20px 0; padding: 15px; background: var(--bg-dark); border-radius: 10px;">
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+                        <div style="text-align: center;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">题目数量</label>
+                            <select id="question-count-select" class="btn" style="background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer;" onchange="updateSettings()">
+                                <option value="5">5题</option>
+                                <option value="10" selected>10题</option>
+                                <option value="15">15题</option>
+                                <option value="20">20题</option>
+                            </select>
+                        </div>
+                        <div style="text-align: center;">
+                            <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">难度筛选</label>
+                            <select id="difficulty-select" class="btn" style="background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer;" onchange="updateSettings()">
+                                <option value="all" selected>全部难度</option>
+                                <option value="easy">入门/基础</option>
+                                <option value="medium">进阶</option>
+                                <option value="hard">中级/高级</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <p style="text-align: center; margin: 20px 0; color: var(--text-muted);">选择练习类型开始测试</p>
+                <div class="topic-grid" id="practice-topics"></div>
+            </div>
+            
+            <div class="card quiz-container" id="practice-quiz" style="display: none;">
+                <div class="back-btn" onclick="backToPracticeMenu()">← 返回练习选择</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <span style="color: var(--text-muted);">题 <span id="quiz-current-num">1</span> / <span id="quiz-total-num">10</span></span>
+                    <span style="color: var(--secondary); font-weight: bold;">得分: <span id="quiz-score">0</span></span>
+                </div>
+                <div id="quiz-question-text" style="font-size: 1.2em; margin-bottom: 20px;"></div>
+                <div class="quiz-options" id="quiz-options-container"></div>
+                <div class="explanation" id="quiz-explanation"></div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" id="next-question-btn" onclick="nextQuestion()" style="display: none;">下一题</button>
+                </div>
+            </div>
+            
+            <div class="card quiz-container" id="practice-result" style="display: none;">
+                <h2>🎉 练习完成！</h2>
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">🏆</div>
+                    <div style="font-size: 2em; color: var(--secondary); margin-bottom: 10px;">
+                        得分: <span id="final-score-num">0</span> / <span id="final-total-num">0</span>
+                    </div>
+                    <div style="font-size: 1.2em; color: var(--text-muted); margin-bottom: 30px;" id="final-feedback-text"></div>
+                    <div class="stats-grid" style="max-width: 600px; margin: 0 auto 30px;">
+                        <div class="stat-card"><div class="number" id="result-correct-count">0</div><label>正确</label></div>
+                        <div class="stat-card"><div class="number" id="result-wrong-count">0</div><label>错误</label></div>
+                        <div class="stat-card"><div class="number" id="result-time-used">0:00</div><label>用时</label></div>
+                    </div>
+                    <button class="btn" onclick="backToPracticeMenu()">再来一次</button>
+                    <button class="btn btn-secondary" onclick="switchTab('home', document.querySelector('[onclick*=home]'))">返回首页</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 学习计划 -->
+        <div id="plan" class="section">
+            <div class="card">
+                <h2>📋 自定义学习计划 <span id="plan-level-display" class="level-tag">等级1</span></h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">勾选你想学习的内容</p>
+                
+                <div class="custom-plan" id="plan-topics"></div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn" onclick="generatePlan()">生成学习计划</button>
+                    <button class="btn btn-secondary" onclick="resetPlanSelections()">重置</button>
+                </div>
+                
+                <div id="generated-plan-container" style="display: none; margin-top: 20px;"></div>
+            </div>
+        </div>
+        
+        <!-- 学习进度 -->
+        <div id="progress" class="section">
+            <div class="card">
+                <h2>📊 学习进度追踪</h2>
+                
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card"><div class="number" id="prog-total-q">0</div><label>已完成题目</label></div>
+                    <div class="stat-card"><div class="number" id="prog-accuracy">0%</div><label>总体正确率</label></div>
+                    <div class="stat-card"><div class="number" id="prog-time">0分钟</div><label>学习时长</label></div>
+                    <div class="stat-card"><div class="number" id="prog-mastered">0/6</div><label>掌握主题</label></div>
+                </div>
+                
+                <h3 style="margin-bottom: 15px; color: var(--secondary);">各主题进度</h3>
+                <div id="progress-topics-detail"></div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="resetAllProgress()">重置所有进度</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 数据存储 ====================
+        const storage = {
+            get(key) {
+                try {
+                    const val = localStorage.getItem(key);
+                    return val ? JSON.parse(val) : null;
+                } catch { return null; }
+            },
+            set(key, value) {
+                localStorage.setItem(key, JSON.stringify(value));
+            }
+        };
+        
+        // ==================== 设置数据 ====================
+        let settings = storage.get('abrsm_settings') || {
+            level: 1,
+            questionCount: 10,
+            difficulty: 'all'
+        };
+        
+        let currentLevel = settings.level;
+        
+        let studyData = storage.get('abrsm_study_data') || {
+            totalQuestions: 0,
+            correctAnswers: 0,
+            streak: 0,
+            studyTime: 0,
+            topicsProgress: {
+                notes: { completed: 0, correct: 0 },
+                scales: { completed: 0, correct: 0 },
+                intervals: { completed: 0, correct: 0 },
+                chords: { completed: 0, correct: 0 },
+                terms: { completed: 0, correct: 0 },
+                signatures: { completed: 0, correct: 0 },
+                rhythm: { completed: 0, correct: 0 },
+                harmony: { completed: 0, correct: 0 },
+                composition: { completed: 0, correct: 0 }
+            }
+        };
+        
+        let currentQuizData = {
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            startTime: 0
+        };
+        
+        // ==================== 配置数据 ====================
+        const levelTopics = {
+            1: ['notes', 'terms'],
+            2: ['notes', 'scales', 'terms', 'rhythm'],
+            3: ['notes', 'scales', 'intervals', 'chords', 'terms', 'signatures', 'rhythm'],
+            4: ['notes', 'scales', 'intervals', 'chords', 'terms', 'signatures', 'rhythm', 'harmony'],
+            5: ['notes', 'scales', 'intervals', 'chords', 'terms', 'signatures', 'rhythm', 'harmony', 'composition']
+        };
+        
+        const topicData = {
+            notes: { name: '🎵 音符与节拍', desc: '音符时值、休止符、拍号、附点音符', level: 1 },
+            scales: { name: '🎼 音阶与调号', desc: '大调音阶、调号、关系大小调', level: 2 },
+            intervals: { name: '↔️ 音程', desc: '音程度数、性质（大/小/纯/增/减）', level: 3 },
+            chords: { name: '🎹 和弦', desc: '三和弦、七和弦、转位、终止式', level: 3 },
+            terms: { name: '📝 音乐术语', desc: '速度术语、力度记号、演奏技法', level: 1 },
+            signatures: { name: '🎺 谱号与移调', desc: '各种谱号、移调乐器计算', level: 3 },
+            rhythm: { name: '🥁 节奏与节拍', desc: '复杂节奏、三连音、切分音', level: 2 },
+            harmony: { name: '🎼 和声分析', desc: '和声进行、和弦连接', level: 4 },
+            composition: { name: '📜 乐曲结构', desc: '曲式结构、动机发展', level: 5 }
+        };
+        
+        // ==================== 知识库 ====================
+        const lessonContent = {
+            notes: {
+                title: '🎵 音符与节拍',
+                body: `
+                    <h3>1. 音符时值</h3>
+                    <ul>
+                        <li><b>全音符</b> - 4拍</li>
+                        <li><b>二分音符</b> - 2拍</li>
+                        <li><b>四分音符</b> - 1拍</li>
+                        <li><b>八分音符</b> - 1/2拍</li>
+                        <li><b>十六分音符</b> - 1/4拍</li>
+                    </ul>
+                    <h3>2. 拍号</h3>
+                    <p>拍号格式：分子（每小节几拍）/ 分母（以什么音符为一拍）</p>
+                    <ul>
+                        <li>2/4 - 进行曲风格</li>
+                        <li>3/4 - 华尔兹风格</li>
+                        <li>4/4 - 常见拍号</li>
+                        <li>6/8 - 节奏舞曲</li>
+                    </ul>
+                    <h3>3. 附点音符</h3>
+                    <p>附点 = 延长原音符时值的一半</p>
+                    <p>附点四分音符 = 1拍 + 0.5拍 = 1.5拍</p>
+                    <h3>4. 常见音乐记号</h3>
+                    <ul>
+                        <li><b>延音线 ~</b> - 延长音符时值</li>
+                        <li><b>断音点 ·</b> - 演奏原音符一半时值</li>
+                        <li><b>连音线 ∧</b> - 圆滑连接</li>
+                        <li><b>重复记号</b> - 重复演奏</li>
+                    </ul>
+                `
+            },
+            scales: {
+                title: '🎼 音阶与调号',
+                body: `
+                    <h3>1. 大调音阶公式</h3>
+                    <p>全-全-半-全-全-全-半</p>
+                    
+                    <h3>2. 调号口诀</h3>
+                    <p><b>升号调：</b>FCGDAEB</p>
+                    <p><b>降号调：</b>BEADGCF</p>
+                    
+                    <h3>3. 关系大小调</h3>
+                    <p>关系小调 = 大调主音下方小三度</p>
+                    <ul>
+                        <li>C大调 ↔ A小调</li>
+                        <li>G大调 ↔ E小调</li>
+                        <li>F大调 ↔ D小调</li>
+                    </ul>
+                `
+            },
+            intervals: {
+                title: '↔️ 音程',
+                body: `
+                    <h3>1. 音程性质</h3>
+                    <p>1、4、5、8度用<b>「纯」</b>，其他用<b>「大/小」</b></p>
+                    
+                    <h3>2. 常见音程</h3>
+                    <ul>
+                        <li>C-E = 大三度（4个半音）</li>
+                        <li>C-G = 纯五度（7个半音）</li>
+                        <li>C-C = 纯八度（12个半音）</li>
+                        <li>B-C = 小二度（1个半音）</li>
+                    </ul>
+                    
+                    <h3>3. 增减音程</h3>
+                    <p>增音程 = 大/纯音程 + 半音</p>
+                    <p>减音程 = 小/纯音程 - 半音</p>
+                `
+            },
+            chords: {
+                title: '🎹 和弦',
+                body: `
+                    <h3>1. 三和弦类型</h3>
+                    <ul>
+                        <li><b>大三和弦：</b>大三度 + 小三度（C-E-G）</li>
+                        <li><b>小三和弦：</b>小三度 + 大三度（C-E♭-G）</li>
+                        <li><b>增三和弦：</b>大三度 + 大三度</li>
+                        <li><b>减三和弦：</b>小三度 + 小三度</li>
+                    </ul>
+                    
+                    <h3>2. 和弦转位</h3>
+                    <ul>
+                        <li><b>原位：</b>根音在低音</li>
+                        <li><b>第一转位：</b>三音在低音（标记：6）</li>
+                        <li><b>第二转位：</b>五音在低音（标记：6/4）</li>
+                    </ul>
+                    
+                    <h3>3. 终止式</h3>
+                    <ul>
+                        <li><b>完全终止：</b>V → I</li>
+                        <li><b>变格终止：</b>IV → I</li>
+                        <li><b>半终止：</b>→ V</li>
+                    </ul>
+                `
+            },
+            terms: {
+                title: '📝 音乐术语',
+                body: `
+                    <h3>1. 速度术语</h3>
+                    <div class="term-card"><span class="term">Largo</span><span class="meaning">广板</span></div>
+                    <div class="term-card"><span class="term">Adagio</span><span class="meaning">柔板</span></div>
+                    <div class="term-card"><span class="term">Andante</span><span class="meaning">行板</span></div>
+                    <div class="term-card"><span class="term">Allegro</span><span class="meaning">快板</span></div>
+                    <div class="term-card"><span class="term">Presto</span><span class="meaning">急板</span></div>
+                    
+                    <h3>2. 力度术语</h3>
+                    <div class="term-card"><span class="term">pp</span><span class="meaning">很弱</span></div>
+                    <div class="term-card"><span class="term">p</span><span class="meaning">弱</span></div>
+                    <div class="term-card"><span class="term">mf</span><span class="meaning">中强</span></div>
+                    <div class="term-card"><span class="term">f</span><span class="meaning">强</span></div>
+                    <div class="term-card"><span class="term">ff</span><span class="meaning">很强</span></div>
+                    
+                    <h3>3. 演奏技法</h3>
+                    <div class="term-card"><span class="term">legato</span><span class="meaning">连奏</span></div>
+                    <div class="term-card"><span class="term">staccato</span><span class="meaning">断奏</span></div>
+                    <div class="term-card"><span class="term">cresc.</span><span class="meaning">渐强</span></div>
+                    <div class="term-card"><span class="term">dim.</span><span class="meaning">渐弱</span></div>
+                `
+            },
+signatures: {
+                title: '🎺 谱号与移调',
+                body: `
+                    <h3>1. 谱号</h3>
+                    <ul>
+                        <li><b>高音谱号(G谱号)：</b>第二线 = G</li>
+                        <li><b>低音谱号(F谱号)：</b>第四线 = F</li>
+                        <li><b>中音谱号(C谱号)：</b>第三线 = C</li>
+                        <li><b>次中音谱号：</b>第四线 = C</li>
+                    </ul>
+                    <h3>2. 移调乐器计算</h3>
+                    <ul>
+                        <li><b>B♭乐器：</b>记谱低大二度（记谱C=实际B♭）</li>
+                        <li><b>A乐器：</b>记谱高大二度（记谱C=实际D）</li>
+                        <li><b>F圆号：</b>记谱低纯五度（记谱C=实际F）</li>
+                    </ul>
+                    <h3>3. 各类移调（高级）</h3>
+                    <ul>
+                        <li><b>英国管：</b>记谱高纯五度</li>
+                        <li><b>短笛：</b>记谱高八度</li>
+                        <li><b>低音提琴：</b>记谱低八度</li>
+                    </ul>
+                `
+            },
+            rhythm: {
+                title: '🥁 节奏与节拍',
+                body: `
+                    <h3>1. 三连音</h3>
+                    <p>三个音符替代两个音符的时值</p>
+                    <p>三连音四分音符 = 每个1/3拍</p>
+                    <h3>2. 切分音</h3>
+                    <p>强拍位置改变产生特殊效果</p>
+                    <p>常见形式：X X X - - X X</p>
+                    <h3>3. 复合拍号</h3>
+                    <ul>
+                        <li><b>6/8：</b>两个大三连音一组（每组3拍）</li>
+                        <li><b>9/8：</b>三个大三连音一组</li>
+                        <li><b>12/8：</b>四个大三连音一组</li>
+                    </ul>
+                    <h3>4. 节奏组合（高级）</h3>
+                    <ul>
+                        <li><b>二对三：</b>2个八分对3个十六分</li>
+                        <li><b>四对三：</b>4个十六分对3个八分</li>
+                    </ul>
+                `
+            },
+            harmony: {
+                title: '🎼 和声分析',
+                body: `
+                    <h3>1. 和弦进行</h3>
+                    <ul>
+                        <li><b>I-IV-V-I：</b>完全终止</li>
+                        <li><b>I-vi-IV-V：</b>流行歌曲常见</li>
+                        <li><b>ii-V-I：</b>爵士进行</li>
+                    </ul>
+                    <h3>2. 七和弦类型</h3>
+                    <ul>
+                        <li><b>大七和弦：</b>大三和弦 + 大七度</li>
+                        <li><b>属七和弦：</b>大三和弦 + 小七度</li>
+                        <li><b>小七和弦：</b>小三和弦 + 小七度</li>
+                        <li><b>半减七和弦：</b>减三和弦 + 小七度</li>
+                        <li><b>减七和弦：</b>减三和弦 + 减七度</li>
+                    </ul>
+                    <h3>3. 和声功能</h3>
+                    <ul>
+                        <li><b>T（主功能）：</b>I, iii, vi</li>
+                        <li><b>S（下属功能）：</b>IV, ii, vi</li>
+                        <li><b>D（属功能）：</b>V, vii°</li>
+                    </ul>
+                `
+            },
+            composition: {
+                title: '📜 乐曲结构',
+                body: `
+                    <h3>1. 曲式类型</h3>
+                    <ul>
+                        <li><b>一段式：</b>A</li>
+                        <li><b>二段式：</b>AB</li>
+                        <li><b>三段式：</b>ABA 或 ABC</li>
+                        <li><b>回旋曲式：</b>ABACA</li>
+                        <li><b>奏鸣曲式：</b>呈示部-发展部-再现部</li>
+                    </ul>
+                    <h3>2. 动机发展</h3>
+                    <ul>
+                        <li><b>重复：</b>原样重复</li>
+                        <li><b>移调：</b>移动到其他调</li>
+                        <li><b>逆行：</b>反向进行</li>
+                        <li><b>增值/减值：</b>时值扩大/缩小</li>
+                    </ul>
+                    <h3>3. 乐章结构</h3>
+                    <ul>
+                        <li><b>奏鸣曲快板乐章：</b>4/4，活跃主题</li>
+                        <li><b>慢板乐章：</b>3/4 或 2/4，抒情</li>
+                        <li><b>小步舞曲：</b>3/4，三段式</li>
+                        <li><b>终曲：</b>热烈欢快</li>
+                    </ul>
+                `
+            }
+        };
+        
+// ==================== 题库 ====================
+        // 难度：easy(1-2级), medium(3级), hard(4-5级)
+        const questionBank = {
+            notes: [
+                { q: "一个全音符等于几个四分音符？", options: ["2个", "4个", "8个", "16个"], answer: 1, explanation: "全音符 = 4拍，四分音符 = 1拍，所以全音符等于4个四分音符。", difficulty: "easy" },
+                { q: "在4/4拍中，一个附点二分音符占几拍？", options: ["2拍", "3拍", "4拍", "1.5拍"], answer: 1, explanation: "二分音符 = 2拍，附点延长一半（1拍），所以附点二分音符 = 3拍。", difficulty: "easy" },
+                { q: "3/4拍表示什么含义？", options: ["以四分音符为一拍，每小节3拍", "以八分音符为一拍，每小节3拍", "以四分音符为一拍，每小节4拍", "每小节3个四分音符"], answer: 0, explanation: "3/4拍：分子3表示每小节3拍，分母4表示以四分音符为一拍。这是华尔兹常用拍号。", difficulty: "easy" },
+                { q: "一个八分音符等于几个十六分音符？", options: ["2个", "4个", "1个", "8个"], answer: 0, explanation: "八分音符 = 1/2拍，十六分音符 = 1/4拍，所以一个八分音符等于2个十六分音符。", difficulty: "easy" },
+                { q: "附点四分音符时值为多少？", options: ["1.5拍", "2拍", "1拍", "3拍"], answer: 0, explanation: "四分音符 = 1拍，附点延长一半（1/2拍），所以附点四分音符 = 1.5拍。", difficulty: "easy" }
+            ],
+            scales: [
+                { q: "G大调的调号有几个升号？", options: ["没有", "1个", "2个", "3个"], answer: 1, explanation: "G大调有1个升号（F♯）。升号调的顺序是FCGDAEB。", difficulty: "easy" },
+                { q: "D大调的调号包含哪两个升号？", options: ["F♯和C♯", "C♯和G♯", "F♯和G♯", "E♯和B♯"], answer: 0, explanation: "D大调有2个升号：F♯和C♯。记住口诀'Father Charles'（FC）。", difficulty: "medium" },
+                { q: "降B（B♭）大调有几个降号？", options: ["1个", "2个", "3个", "4个"], answer: 1, explanation: "B♭大调有2个降号：B♭和E♭。降号调的口诀是'Battle Ends And...'（BEAD）。", difficulty: "medium" },
+                { q: "C大调的关系小调是什么？", options: ["G小调", "F小调", "A小调", "D小调"], answer: 2, explanation: "关系小调在主音下方小三度。C下方小三度是A，所以C大调的关系小调是A小调。", difficulty: "easy" }
+            ],
+            intervals: [
+                { q: "C到E是什么音程？", options: ["小二度", "大二度", "小三度", "大三度"], answer: 3, explanation: "C到E包含两个全音（4个半音），是大三度。", difficulty: "medium" },
+                { q: "C到G是什么音程？", options: ["纯四度", "纯五度", "增四度", "小六度"], answer: 1, explanation: "C-D-E-F-G是5个音，包含7个半音，是纯五度（Perfect Fifth）。", difficulty: "medium" },
+                { q: "B到C是什么音程？", options: ["小二度", "大二度", "小三度", "大三度"], answer: 0, explanation: "B到C只有1个半音，是小二度。E-F和B-C都是自然半音。", difficulty: "medium" },
+                { q: "E到G是几度音程？", options: ["大二度", "小二度", "大三度", "小三度"], answer: 3, explanation: "E-F-G是3个音，E到G包含3个半音，所以是小三度。", difficulty: "medium" }
+            ],
+            chords: [
+                { q: "C-E-G是什么和弦？", options: ["小三和弦 Cm", "大三和弦 C", "增三和弦 C+", "减三和弦 C°"], answer: 1, explanation: "C到E是大三���（4半音），E到G是小三度（3半音）。大三度+小三度=大三和弦。", difficulty: "medium" },
+                { q: "C-E♭-G是什么和弦？", options: ["大三和弦 C", "小三和弦 Cm", "增三和弦 C+", "减三和弦 C°"], answer: 1, explanation: "C到E♭是小三度（3半音），E♭到G是大三度（4半音）。小三度+大三度=小三和弦。", difficulty: "medium" },
+                { q: "大三和弦的构成是？", options: ["小三度+小三度", "大三度+大三度", "小三度+大三度", "大三度+小三度"], answer: 3, explanation: "大三和弦 = 根音到三音大三度 + 三音到五音小三度。", difficulty: "medium" },
+                { q: "终止式 V-I 是什么类型？", options: ["完全终止", "不完全终止", "半终止", "变格终止"], answer: 0, explanation: "V（属音）到 I（主音）是完全终止，给人确定、结束的感觉。", difficulty: "hard" }
+            ],
+            terms: [
+                { q: "Allegro 是什么意思？", options: ["慢板", "快板", "中板", "柔板"], answer: 1, explanation: "Allegro是意大利语，意思是「快」或「活泼」，速度约为120-168 BPM。", difficulty: "easy" },
+                { q: "p (piano) 表示什么力度？", options: ["强", "弱", "中强", "很弱"], answer: 1, explanation: "p或piano表示「弱」，力度轻柔。", difficulty: "easy" },
+                { q: "ff 表示什么力度？", options: ["很强", "强", "中强", "弱"], answer: 0, explanation: "ff（fortissimo）表示「很强」，需要用力演奏。", difficulty: "easy" },
+                { q: "cresc.（crescendo）是什么意思？", options: ["渐强", "渐弱", "保持", "突强"], answer: 0, explanation: "Crescendo意为「渐强」，音量逐渐变大。", difficulty: "easy" },
+                { q: "staccato 是什么意思？", options: ["连奏", "断奏", "强调", "保持"], answer: 1, explanation: "Staccato意为「断奏」或「跳音」，音符要短促演奏。", difficulty: "medium" },
+                { q: "legato 表示什么奏法？", options: ["断奏", "连奏", "重音", "保持"], answer: 1, explanation: "Legato意为「连奏」，音符之间要圆滑连接，无间隙。", difficulty: "medium" }
+            ],
+            signatures: [
+                { q: "高音谱号中，第二线是什么音？", options: ["B", "G", "D", "F"], answer: 1, explanation: "高音谱号（G谱号）的符号中心在第二线，所以第二线表示G音。", difficulty: "easy" },
+                { q: "低音谱号（F谱号）中，第四线是什么音？", options: ["A", "C", "F", "E"], answer: 2, explanation: "低音谱号（F谱号）的两个点夹着第四线，所以第四线表示F音。", difficulty: "easy" },
+                { q: "B♭小号记谱C，实际发出什么音？", options: ["C", "D", "B♭", "B"], answer: 2, explanation: "B♭小号的实际音高比记谱低大二度，所以记谱C实际发B♭音。", difficulty: "hard" },
+                { q: "移调乐器的目的是什么？", options: ["让乐手容易读谱", "让乐器美观", "统一调音", "让钢琴伴奏"], answer: 0, explanation: "移调乐器让乐手可以用熟悉的指法演奏不同调性的乐曲，乐谱会根据乐器调性来写。", difficulty: "hard" }
+            ],
+            rhythm: [
+                { q: "三连音相当于几个八分音符的时值？", options: ["1个", "2个", "3个", "4个"], answer: 2, explanation: "三连音是三个音符替代两个音符的时值，所以相当于2个八分音符。", difficulty: "easy" },
+                { q: "6/8拍是哪种节奏类型？", options: ["单拍子", "复拍子", "混合拍子", "变换拍子"], answer: 1, explanation: "6/8是复拍子，由两个三连音节奏组成，每组3拍。", difficulty: "medium" },
+                { q: "切分音的主要特征是什么？", options: ["强拍起音", "弱拍起音", "改变强拍位置", "加快速度"], answer: 2, explanation: "切分音通过改变正常节拍中的强拍位置来创造特殊的节奏效果。", difficulty: "medium" },
+                { q: "二对三节奏是指？", options: ["2个八分对3个十六分", "2个十六分对3个八分", "3个八分对2个十六分", "任意组合"], answer: 0, explanation: "二对三是2个八分音符的时值对应3个十六分音符。", difficulty: "hard" }
+            ],
+            harmony: [
+                { q: "I-IV-V-I 是什么终止式？", options: ["完全终止", "半终止", "变格终止", "阻碍终止"], answer: 0, explanation: "I到V再到I是古典音乐中最强的终止式，称为完全终止。", difficulty: "medium" },
+                { q: "以下哪个是属七和弦？", options: ["Cmaj7", "C7", "Cm7", "Cdim7"], answer: 1, explanation: "属七和弦由大三和弦加大七度构成，C7 = C-E-G-B♭。", difficulty: "hard" },
+                { q: "以下哪个属于下属功能和弦？", options: ["I", "IV", "V", "VII"], answer: 1, explanation: "下属功能包括IV、ii、vi和弦。", difficulty: "hard" },
+                { q: "爵士乐中常见的进行是？", options: ["I-IV-V", "I-V-vi-IV", "ii-V-I", "vi-IV-I-V"], answer: 2, explanation: "ii-V-I是爵士乐中最常见的和弦进行。", difficulty: "hard" }
+            ],
+            composition: [
+                { q: "三段式（ABA）的特征是？", options: ["三个主题", "首尾相同", "两个主题交替", "主题重复"], answer: 1, explanation: "三段式ABA的首段A和再现段A完全相同，中间是对比段B。", difficulty: "medium" },
+                { q: "下列哪个不是动机发展手法？", options: ["重复", "移调", "逆行", "延长"], answer: 3, explanation: "动机发展手法包括：重复、移调、逆行、增值/减值。", difficulty: "hard" },
+                { q: "奏鸣曲式的三个主要部分是？", options: ["呈示部-发展部-再现部", "呈示部-再现部-尾声", "主题-发展-结尾", "引子-主题-尾声"], answer: 0, explanation: "奏鸣曲式由呈示部、发展部和再现部三部分组成。", difficulty: "hard" },
+                { q: "小步舞曲通常使用什么拍号？", options: ["2/4", "3/4", "4/4", "6/8"], answer: 1, explanation: "小步舞曲是三拍子音乐，通常用3/4拍。", difficulty: "medium" }
+            ]
+        };
+        
+        // ==================== 核心功能 ====================
+        
+        // 页面切换
+        function switchTab(tabId, btn) {
+            // 隐藏所有section
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            // 显示目标section
+            const target = document.getElementById(tabId);
+            if (target) target.classList.add('active');
+            
+            // 更新导航按钮
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            
+            // 初始化特定页面
+            if (tabId === 'learn') renderLearnPage();
+            if (tabId === 'practice') renderPracticePage();
+            if (tabId === 'plan') renderPlanPage();
+            if (tabId === 'progress') renderProgressPage();
+        }
+        
+        // 等级选择
+        function selectLevel(level) {
+            currentLevel = level;
+            settings.level = level;
+            saveSettings();
+            
+            // 更新等级选择器显示
+            document.getElementById('question-count-select').value = settings.questionCount;
+            document.getElementById('difficulty-select').value = settings.difficulty;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(level + '级')) btn.classList.add('active');
+            });
+            
+            // 更新等级信息显示
+            const levelInfos = {
+                1: '🎵 Level 1 入门<br>基础音符、简单的节拍、基本术语。适合完全没有乐理基础的学习者。<br><b>考试内容：</b>音符时值、休止符、简单拍号、基础音乐术语、简单音乐记号<br><b>考试形式：</b>选择题、连线题<br><b>建议学习时长：</b>2-3周',
+                2: '🎼 Level 2 基础<br>调号概念、音程基础、更多术语和符号。<br><b>考试内容：</b>调号识别、简单音程、三连音、速度术语、和弦种类、演奏法<br><b>考试形式：</b>选择题、补全题<br><b>建议学习时长：</b>3-4周',
+                3: '🎹 Level 3 进阶<br>音阶构成、三和弦、移调基础。<br><b>考试内容：</b>音阶书写、三和弦原位与转位、移调乐器入门、终止式基础、所有音程<br><b>考试形式：</b>选择题、书写题、配对题<br><b>建议学习时长：</b>4-6周',
+                4: '🎺 Level 4 中级<br>七和弦、和弦转位、复杂音程、高级术语。<br><b>考试内容：</b>七和弦识别、和弦转位、增减音程、表情术语、半音阶、琉特琴音阶<br><b>考试形式：</b>选择题、书写题、分析题<br><b>建议学习时长：</b>6-8周',
+                5: '🏆 Level 5 高级<br>完整的和声分析、移调计算、乐曲结构分析。<br><b>考试内容：</b>完整和声分析、复杂移调、终止式判断、所有乐器移调、乐曲结构<br><b>考试形式：</b>选择题、书写题、分析题、配器题<br><b>建议学习时长：</b>8-12周'
+            };
+            
+            const infoContainer = document.getElementById('level-info-container');
+            infoContainer.innerHTML = `<div class="level-info show">${levelInfos[level]}</div>`;
+            
+            // 更新标签
+            document.getElementById('current-level-tag').textContent = `当前等级：${level}级`;
+            
+            // 更新首页主题显示
+            renderHomeTopics();
+            updateStats();
+        }
+        
+        // 渲染首页主题
+        function renderHomeTopics() {
+            const container = document.getElementById('home-topics');
+            const topics = levelTopics[currentLevel];
+            
+            let html = '';
+            topics.forEach(key => {
+                const topic = topicData[key];
+                const progress = studyData.topicsProgress[key];
+                const percent = Math.min(100, progress.completed * 10);
+                
+                html += `
+                    <div class="topic-card" onclick="openTopic('${key}')">
+                        <h4>${topic.name}</h4>
+                        <p>${topic.desc}</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // 打开主题
+        function openTopic(key) {
+            switchTab('learn', document.querySelector('[onclick*=learn]'));
+            showLesson(key);
+        }
+        
+        // 渲染学习页面
+        function renderLearnPage() {
+            document.getElementById('learn-level-display').textContent = `等级${currentLevel}`;
+            const container = document.getElementById('learn-topics');
+            const topics = levelTopics[currentLevel];
+            
+            let html = '';
+            topics.forEach(key => {
+                const topic = topicData[key];
+                html += `
+                    <div class="topic-card" onclick="showLesson('${key}')">
+                        <h4>${topic.name}</h4>
+                        <p>${topic.desc}</p>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            document.getElementById('learn-list').style.display = 'block';
+            document.getElementById('lesson-detail').style.display = 'none';
+        }
+        
+        // 显示课程内容
+        function showLesson(key) {
+            const lesson = lessonContent[key];
+            document.getElementById('learn-list').style.display = 'none';
+            document.getElementById('lesson-detail').style.display = 'block';
+            
+            document.getElementById('lesson-detail').innerHTML = `
+                <div class="card">
+                    <div class="back-btn" onclick="backToLearnList()">← 返回主题列表</div>
+                    <h2>${lesson.title}</h2>
+                    <div class="lesson-content">${lesson.body}</div>
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button class="btn" onclick="startQuizForTopic('${key}')">📝 开始练习</button>
+                        <button class="btn btn-secondary" onclick="backToLearnList()">继续学习其他主题</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function backToLearnList() {
+            document.getElementById('learn-list').style.display = 'block';
+            document.getElementById('lesson-detail').style.display = 'none';
+        }
+        
+        // 渲染练习页面
+        function renderPracticePage() {
+            document.getElementById('practice-level-tag').textContent = `等级${currentLevel}`;
+            const container = document.getElementById('practice-topics');
+            const topics = levelTopics[currentLevel];
+            
+            let html = `
+                <div class="topic-card" onclick="startMixedQuiz()">
+                    <h4>🎲 综合练习</h4>
+                    <p>随机抽取各类型题目</p>
+                </div>
+            `;
+            
+            topics.forEach(key => {
+                const topic = topicData[key];
+                html += `
+                    <div class="topic-card" onclick="startTopicQuiz('${key}')">
+                        <h4>${topic.name}</h4>
+                        <p>${topic.desc}</p>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            document.getElementById('practice-start').style.display = 'block';
+            document.getElementById('practice-quiz').style.display = 'none';
+            document.getElementById('practice-result').style.display = 'none';
+        }
+        
+        function startMixedQuiz() {
+            const topics = levelTopics[currentLevel];
+            const allQuestions = [];
+            topics.forEach(key => {
+                questionBank[key].forEach(q => allQuestions.push({...q, topic: key}));
+            });
+            startQuiz(allQuestions);
+        }
+        
+        function startTopicQuiz(key) {
+            const questions = questionBank[key].map(q => ({...q, topic: key}));
+            startQuiz(questions);
+        }
+        
+        function startQuizForTopic(key) {
+            switchTab('practice', document.querySelector('[onclick*=practice]'));
+            startTopicQuiz(key);
+        }
+        
+        // 开始测验
+        function startQuiz(questions) {
+            // 过滤难度
+            let filteredQuestions = questions;
+            if (settings.difficulty !== 'all') {
+                filteredQuestions = questions.filter(q => {
+                    if (settings.difficulty === 'easy') return q.difficulty === 'easy';
+                    if (settings.difficulty === 'medium') return q.difficulty === 'medium';
+                    if (settings.difficulty === 'hard') return q.difficulty === 'hard';
+                    return true;
+                });
+            }
+            
+            const count = Math.min(settings.questionCount, filteredQuestions.length);
+            currentQuizData = {
+                questions: shuffle([...filteredQuestions]).slice(0, count),
+                currentIndex: 0,
+                score: 0,
+                startTime: Date.now()
+            };
+            
+            document.getElementById('practice-start').style.display = 'none';
+            document.getElementById('practice-quiz').style.display = 'block';
+            document.getElementById('practice-result').style.display = 'none';
+            
+            document.getElementById('quiz-total-num').textContent = currentQuizData.questions.length;
+            document.getElementById('quiz-score').textContent = '0';
+            showQuizQuestion();
+        }
+        
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        
+        function showQuizQuestion() {
+            const q = currentQuizData.questions[currentQuizData.currentIndex];
+            document.getElementById('quiz-current-num').textContent = currentQuizData.currentIndex + 1;
+            document.getElementById('quiz-question-text').textContent = q.q;
+            
+            const optionsDiv = document.getElementById('quiz-options-container');
+            optionsDiv.innerHTML = '';
+            
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.textContent = opt;
+                btn.onclick = () => selectAnswer(i);
+                optionsDiv.appendChild(btn);
+            });
+            
+            document.getElementById('quiz-explanation').classList.remove('show');
+            document.getElementById('next-question-btn').style.display = 'none';
+        }
+        
+        function selectAnswer(selectedIndex) {
+            const q = currentQuizData.questions[currentQuizData.currentIndex];
+            const correct = selectedIndex === q.answer;
+            
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach((opt, i) => {
+                opt.classList.add('disabled');
+                opt.onclick = null;
+                if (i === q.answer) opt.classList.add('correct');
+                else if (i === selectedIndex && !correct) opt.classList.add('wrong');
+            });
+            
+            if (correct) {
+                currentQuizData.score++;
+                studyData.streak++;
+            } else {
+                studyData.streak = 0;
+            }
+            
+            // 更新进度
+            if (q.topic) {
+                studyData.topicsProgress[q.topic].completed++;
+                if (correct) studyData.topicsProgress[q.topic].correct++;
+            }
+            
+            document.getElementById('quiz-score').textContent = currentQuizData.score;
+            document.getElementById('quiz-explanation').innerHTML = `<b>💡 解析：</b>${q.explanation}`;
+            document.getElementById('quiz-explanation').classList.add('show');
+            document.getElementById('next-question-btn').style.display = 'inline-block';
+            
+            studyData.totalQuestions++;
+            if (correct) studyData.correctAnswers++;
+            saveData();
+            updateStats();
+        }
+        
+        function nextQuestion() {
+            currentQuizData.currentIndex++;
+            if (currentQuizData.currentIndex < currentQuizData.questions.length) {
+                showQuizQuestion();
+            } else {
+                showQuizResult();
+            }
+        }
+        
+        function showQuizResult() {
+            document.getElementById('practice-quiz').style.display = 'none';
+            document.getElementById('practice-result').style.display = 'block';
+            
+            const { score, questions, startTime } = currentQuizData;
+            const total = questions.length;
+            const time = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(time / 60);
+            const seconds = time % 60;
+            
+            document.getElementById('final-score-num').textContent = score;
+            document.getElementById('final-total-num').textContent = total;
+            document.getElementById('result-correct-count').textContent = score;
+            document.getElementById('result-wrong-count').textContent = total - score;
+            document.getElementById('result-time-used').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            const percent = (score / total * 100).toFixed(0);
+            let feedback = '';
+            if (percent >= 80) feedback = '🎉 太棒了！完美！';
+            else if (percent >= 60) feedback = '👍 很好！继续加油！';
+            else if (percent >= 40) feedback = '💪 及格了，还需努力！';
+            else feedback = '📚 需要加强，先去学习吧！';
+            document.getElementById('final-feedback-text').textContent = feedback;
+            
+            studyData.studyTime += time;
+            saveData();
+        }
+        
+        function backToPracticeMenu() {
+            renderPracticePage();
+        }
+        
+        // 渲染计划页面
+        function renderPlanPage() {
+            document.getElementById('plan-level-display').textContent = `等级${currentLevel}`;
+            const container = document.getElementById('plan-topics');
+            const topics = levelTopics[currentLevel];
+            
+            let html = '';
+            topics.forEach(key => {
+                const topic = topicData[key];
+                html += `
+                    <div class="plan-item">
+                        <input type="checkbox" id="plan-${key}" checked>
+                        <label for="plan-${key}"><b>${topic.name}</b> - ${topic.desc}</label>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            document.getElementById('generated-plan-container').style.display = 'none';
+        }
+        
+        function generatePlan() {
+            const checkboxes = document.querySelectorAll('#plan-topics input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) {
+                alert('请至少选择一项学习内容');
+                return;
+            }
+            
+            let html = '<div style="margin-top: 20px;">';
+            let day = 1;
+            
+            checkboxes.forEach(cb => {
+                const key = cb.id.replace('plan-', '');
+                const topic = topicData[key];
+                html += `
+                    <div class="card" style="background: rgba(79, 70, 229, 0.1);">
+                        <h4>第${day}天：${topic.name}</h4>
+                        <p><b>上午：</b>学习讲解</p>
+                        <p><b>下午：</b>模拟练习</p>
+                        <p><b>建议时长：</b>30-45分钟</p>
+                    </div>
+                `;
+                day++;
+            });
+            
+            html += '</div>';
+            
+            document.getElementById('generated-plan-container').innerHTML = html;
+            document.getElementById('generated-plan-container').style.display = 'block';
+        }
+        
+        function resetPlanSelections() {
+            document.querySelectorAll('#plan-topics input[type="checkbox"]').forEach(cb => cb.checked = true);
+            document.getElementById('generated-plan-container').style.display = 'none';
+        }
+        
+        // 渲染进度页面
+        function renderProgressPage() {
+            document.getElementById('prog-total-q').textContent = studyData.totalQuestions;
+            const accuracy = studyData.totalQuestions > 0 
+                ? Math.round(studyData.correctAnswers / studyData.totalQuestions * 100) + '%'
+                : '0%';
+            document.getElementById('prog-accuracy').textContent = accuracy;
+            document.getElementById('prog-time').textContent = Math.floor(studyData.studyTime / 60) + '分钟';
+            
+            let mastered = 0;
+            Object.keys(studyData.topicsProgress).forEach(key => {
+                if (studyData.topicsProgress[key].completed >= 5) mastered++;
+            });
+            document.getElementById('prog-mastered').textContent = `${mastered}/6`;
+            
+            const container = document.getElementById('progress-topics-detail');
+            let html = '';
+            Object.keys(topicData).forEach(key => {
+                const tp = studyData.topicsProgress[key];
+                const info = topicData[key];
+                const progress = Math.min(100, tp.completed * 10);
+                const acc = tp.completed > 0 ? Math.round(tp.correct / tp.completed * 100) : 0;
+                html += `
+                    <div class="plan-item" style="justify-content: space-between;">
+                        <span>${info.name}</span>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="color: var(--text-muted);">${tp.completed}题 (${acc}%)</span>
+                            <div class="progress-bar" style="width: 100px; margin: 0;">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+        
+        function resetAllProgress() {
+            if (confirm('确定要清除所有学习进度吗？这将无法恢复。')) {
+                studyData = {
+                    totalQuestions: 0, correctAnswers: 0, streak: 0, studyTime: 0,
+                    topicsProgress: { notes: {completed: 0, correct: 0}, scales: {completed: 0, correct: 0}, intervals: {completed: 0, correct: 0}, chords: {completed: 0, correct: 0}, terms: {completed: 0, correct: 0}, signatures: {completed: 0, correct: 0} }
+                };
+                currentLevel = 1;
+                saveData();
+                updateStats();
+                renderHomeTopics();
+                alert('进度已重置');
+            }
+        }
+        
+        // 工具函数
+        function saveData() {
+            storage.set('abrsm_study_data', studyData);
+        }
+        
+        function saveSettings() {
+            storage.set('abrsm_settings', settings);
+        }
+        
+        function updateSettings() {
+            settings.questionCount = parseInt(document.getElementById('question-count-select').value);
+            settings.difficulty = document.getElementById('difficulty-select').value;
+            saveSettings();
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-total').textContent = studyData.totalQuestions;
+            const accuracy = studyData.totalQuestions > 0 
+                ? Math.round(studyData.correctAnswers / studyData.totalQuestions * 100) + '%'
+                : '0%';
+            document.getElementById('stat-correct').textContent = accuracy;
+            document.getElementById('stat-streak').textContent = studyData.streak;
+            document.getElementById('stat-level').textContent = currentLevel;
+        }
+        
+        // 初始化
+        function init() {
+            // 设置默认页面
+            switchTab('home', document.querySelector('.nav-btn'));
+            
+            // 加载设置
+            settings = storage.get('abrsm_settings') || { level: 1, questionCount: 10, difficulty: 'all' };
+            currentLevel = settings.level;
+            
+            // 更新设置控件
+            if (document.getElementById('question-count-select')) {
+                document.getElementById('question-count-select').value = settings.questionCount;
+                document.getElementById('difficulty-select').value = settings.difficulty;
+            }
+            
+            // 加载等级
+            selectLevel(currentLevel);
+            
+            // 更新统计
+            updateStats();
+        }
+        
+        // 启动
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D 地球表面重力关系模拟</title>
+  <style>
+    :root {
+      --bg1: #fbf5e7;
+      --bg2: #ece0c9;
+      --panel: rgba(255, 251, 243, 0.92);
+      --ink: #1e2936;
+      --muted: #5d6a78;
+      --accent: #1f4f82;
+      --grav: #d1495b;
+      --eff: #2a9d8f;
+      --cent: #f4a259;
+      --acc: #6c5ce7;
+      --radial: #b56576;
+      --tangent: #3a7d44;
+      --card: rgba(255, 255, 255, 0.75);
+      --shadow: 0 20px 44px rgba(24, 39, 62, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 18%, rgba(244, 162, 89, 0.2), transparent 22%),
+        radial-gradient(circle at 80% 10%, rgba(108, 92, 231, 0.18), transparent 20%),
+        linear-gradient(145deg, var(--bg1), var(--bg2));
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: minmax(360px, 450px) 1fr;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .panel,
+    .stage {
+      border-radius: 24px;
+      border: 1px solid rgba(31, 79, 130, 0.09);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .panel {
+      padding: 22px;
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+    }
+
+    .stage {
+      padding: 14px;
+      min-height: calc(100vh - 40px);
+      position: relative;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      margin: 22px 0 10px;
+      font-size: 18px;
+    }
+
+    p,
+    li,
+    label,
+    input,
+    button,
+    table {
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .intro,
+    .hint {
+      color: var(--muted);
+    }
+
+    .toolbar,
+    .toggles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button.secondary {
+      background: #e6eef8;
+      color: var(--accent);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .control-card,
+    .object-card,
+    .formula {
+      background: var(--card);
+      border: 1px solid rgba(31, 79, 130, 0.08);
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .object-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .object-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    input[type="number"] {
+      width: 96px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(31, 79, 130, 0.18);
+      background: #fff;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+      margin-top: 12px;
+    }
+
+    .grid-2 div {
+      color: var(--muted);
+    }
+
+    .grid-2 strong {
+      color: var(--ink);
+      display: block;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(31, 79, 130, 0.08);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 6px 10px 10px;
+      color: var(--muted);
+    }
+
+    .line {
+      width: 24px;
+      height: 3px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    code {
+      display: block;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      white-space: pre-wrap;
+      color: #10243c;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th,
+    td {
+      padding: 8px 6px;
+      border-bottom: 1px solid rgba(31, 79, 130, 0.1);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 8px 8px;
+    }
+
+    .stage-head h2 {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: calc(100vh - 130px);
+      display: block;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.85), transparent 24%),
+        linear-gradient(180deg, rgba(250, 246, 237, 0.9), rgba(239, 230, 210, 0.88));
+    }
+
+    .stage-overlay {
+      position: absolute;
+      top: 86px;
+      right: 24px;
+      width: 320px;
+      max-width: calc(100% - 32px);
+      display: grid;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .overlay-card {
+      pointer-events: auto;
+      background: rgba(255, 251, 243, 0.92);
+      border: 1px solid rgba(31, 79, 130, 0.08);
+      border-radius: 18px;
+      box-shadow: 0 14px 30px rgba(24, 39, 62, 0.12);
+      backdrop-filter: blur(8px);
+      padding: 12px;
+    }
+
+    .overlay-card h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .overlay-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .overlay-head h3 {
+      margin: 0;
+    }
+
+    .overlay-body.collapsed {
+      display: none;
+    }
+
+    .step-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .step-status {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .quick-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .quick-points button {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    #magnifierCanvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 14px;
+      display: block;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.88), transparent 24%),
+        linear-gradient(180deg, rgba(251, 247, 239, 0.98), rgba(240, 232, 214, 0.95));
+    }
+
+    @media (max-width: 1100px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        max-height: none;
+      }
+
+      .stage {
+        min-height: auto;
+      }
+
+      canvas {
+        height: 60vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="panel">
+      <h1>3D 地球表面重力关系模拟</h1>
+      <p class="intro">
+        这个版本把地球画成可拖拽观察的 3D 球面。你可以直接用鼠标在球面上拖动物体，观察从两极到赤道不同位置时，万有引力、离心力、有效重力与有效重力加速度的方向、大小和分解关系。
+      </p>
+      <p class="hint">
+        操作提示：拖动球面上的彩色点即可改变位置；空白处拖动可转动地球；滚轮可缩放球体。
+      </p>
+
+      <div class="toolbar">
+        <button id="addObjectBtn">新增物体</button>
+        <button id="presetBtn" class="secondary">两极 + 中纬 + 赤道</button>
+        <button id="resetBtn" class="secondary">恢复默认</button>
+      </div>
+
+      <div class="control-card">
+        <div class="row">
+          <label for="vectorScale">向量放大倍率</label>
+          <input id="vectorScale" type="range" min="40" max="280" value="120" />
+        </div>
+        <div class="row">
+          <label for="centrifugalBoost">离心力/分解独立放大</label>
+          <input id="centrifugalBoost" type="range" min="1" max="240" value="80" />
+        </div>
+        <div class="row">
+          <label for="earthScale">地球显示大小</label>
+          <input id="earthScale" type="range" min="180" max="420" value="290" />
+        </div>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="showGrav" checked />万有引力</label>
+          <label class="toggle"><input type="checkbox" id="showCent" checked />离心力</label>
+          <label class="toggle"><input type="checkbox" id="showEff" checked />有效重力</label>
+          <label class="toggle"><input type="checkbox" id="showAcc" checked />有效重力加速度</label>
+          <label class="toggle"><input type="checkbox" id="showDecomp" checked />离心力分解</label>
+          <label class="toggle"><input type="checkbox" id="showLabels" checked />公式标签</label>
+          <label class="toggle"><input type="checkbox" id="teachingMode" checked />教学演示模式</label>
+        </div>
+      </div>
+
+      <h2>物体设置</h2>
+      <div id="objectList" class="object-list"></div>
+
+      <h2>公式</h2>
+      <div class="formula">
+        <code>万有引力：
+vec(F_g) = - (G M m / R^2) e_r
+
+万有引力加速度：
+vec(g_0) = - (G M / R^2) e_r</code>
+      </div>
+      <div class="formula">
+        <code>离心加速度：
+vec(a_c) = - vec(Ω) × (vec(Ω) × vec(r))
+
+在地球表面纬度 φ 处：
+|a_c| = ω^2 R cosφ</code>
+      </div>
+      <div class="formula">
+        <code>离心力：
+vec(F_c) = m vec(a_c)
+
+分解为：
+F_c,r = m ω^2 R cos^2φ
+F_c,t = m ω^2 R sinφ cosφ
+
+其中：
+1. F_c,r 沿远离地心方向
+2. F_c,t 沿朝向赤道方向</code>
+      </div>
+      <div class="formula">
+        <code>有效重力：
+vec(F_eff) = vec(F_g) + vec(F_c)
+
+有效重力加速度：
+vec(g_eff) = vec(F_eff) / m = vec(g_0) + vec(a_c)</code>
+      </div>
+      <div class="formula">
+        <code>有效重力偏转角（相对指向地心）：
+α = arctan( |ω^2 R sinφ cosφ| / |g_0 - ω^2 R cos^2φ| )</code>
+      </div>
+      <div class="formula">
+        <code>教学演示模式说明：
+1. 万有引力 / 有效重力 / 有效重力加速度按一套基准缩放
+2. 离心力与其分解可再乘一个独立放大倍数
+3. 这样不会改变方向、分解关系和夹角，只是为了让极小量更容易看见</code>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>位置</th>
+            <th>结论</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>两极</td>
+            <td>离心力为 0，因此有效重力与万有引力方向、大小都相同。</td>
+          </tr>
+          <tr>
+            <td>赤道</td>
+            <td>离心力最大，但只沿径向，因此方向仍指向地心，大小小于万有引力。</td>
+          </tr>
+          <tr>
+            <td>中纬度</td>
+            <td>离心力既有径向分量，也有切向分量，所以有效重力更小，且略微偏向赤道。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>采用常数</h2>
+      <div class="formula">
+        <code>G = 6.67430 × 10^-11 N·m²/kg²
+M = 5.9722 × 10^24 kg
+R = 6.371 × 10^6 m
+ω = 7.2921159 × 10^-5 rad/s</code>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-head">
+        <div>
+          <h2>3D 球面演示</h2>
+          <div class="hint">彩色点可直接拖动；正面点优先响应。箭头长度经过统一放大，主要用来比较方向和相对变化。</div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="line" style="background: var(--grav)"></i>万有引力</span>
+        <span><i class="line" style="background: var(--cent)"></i>离心力</span>
+        <span><i class="line" style="background: var(--eff)"></i>有效重力</span>
+        <span><i class="line" style="background: var(--acc)"></i>有效重力加速度</span>
+        <span><i class="line" style="background: var(--radial)"></i>离心径向分量</span>
+        <span><i class="line" style="background: var(--tangent)"></i>离心切向分量</span>
+      </div>
+      <canvas id="simCanvas"></canvas>
+      <div class="stage-overlay">
+        <section class="overlay-card">
+          <div class="overlay-head">
+            <h3>局部放大镜</h3>
+            <button id="toggleMagnifierBtn" class="secondary">收起</button>
+          </div>
+          <div id="magnifierBody" class="overlay-body">
+            <div class="hint">默认放大前景中最靠近视线的物体，也可以点击某个物体后锁定观察。</div>
+            <canvas id="magnifierCanvas"></canvas>
+          </div>
+        </section>
+        <section class="overlay-card">
+          <div class="overlay-head">
+            <h3>分步讲解</h3>
+            <button id="toggleStepsBtn" class="secondary">收起</button>
+          </div>
+          <div id="stepsBody" class="overlay-body">
+            <div class="hint">按课堂顺序逐步展示：先看万有引力，再叠加离心力与分解，最后得到有效重力和有效重力加速度。</div>
+            <div class="step-controls">
+              <button id="prevStepBtn" class="secondary">上一步</button>
+              <button id="nextStepBtn">下一步</button>
+              <button id="autoStepBtn" class="secondary">自动播放</button>
+              <button id="resetStepBtn" class="secondary">回到第 1 步</button>
+            </div>
+            <div id="stepStatus" class="step-status"></div>
+          </div>
+        </section>
+        <section class="overlay-card">
+          <div class="overlay-head">
+            <h3>课堂快捷操作</h3>
+          </div>
+          <div class="hint">一键跳到典型纬度，并在下方查看当前聚焦物体的公式代入结果。</div>
+          <div class="quick-points">
+            <button id="pointNorthPoleBtn" class="secondary">北极</button>
+            <button id="pointMidLatBtn" class="secondary">45°中纬</button>
+            <button id="pointEquatorBtn" class="secondary">赤道</button>
+            <button id="unlockFocusBtn" class="secondary">取消锁定</button>
+          </div>
+          <div id="formulaSubstitution" class="step-status"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const constants = {
+      G: 6.67430e-11,
+      M: 5.9722e24,
+      R: 6.371e6,
+      omega: 7.2921159e-5
+    };
+
+    const colors = ["#d1495b", "#2a9d8f", "#1f4f82", "#8d5a97", "#e76f51", "#3a7d44"];
+    const canvas = document.getElementById("simCanvas");
+    const ctx = canvas.getContext("2d");
+    const magnifierCanvas = document.getElementById("magnifierCanvas");
+    const magCtx = magnifierCanvas.getContext("2d");
+    const objectList = document.getElementById("objectList");
+
+    const ui = {
+      vectorScale: document.getElementById("vectorScale"),
+      centrifugalBoost: document.getElementById("centrifugalBoost"),
+      earthScale: document.getElementById("earthScale"),
+      showGrav: document.getElementById("showGrav"),
+      showCent: document.getElementById("showCent"),
+      showEff: document.getElementById("showEff"),
+      showAcc: document.getElementById("showAcc"),
+      showDecomp: document.getElementById("showDecomp"),
+      showLabels: document.getElementById("showLabels"),
+      teachingMode: document.getElementById("teachingMode")
+    };
+
+    let objects = [];
+    let nextId = 1;
+    let viewYaw = -0.72;
+    let viewPitch = 0.33;
+    let draggingObjectId = null;
+    let rotatingView = false;
+    let dragFrontHemisphere = true;
+    let lastPointer = null;
+    let renderState = null;
+    let focusedObjectId = null;
+    let stepIndex = 0;
+    let autoStepTimer = null;
+    let magnifierCollapsed = false;
+    let stepsCollapsed = false;
+
+    const steps = [
+      {
+        title: "第 1 步：只看万有引力",
+        text: "先建立基准。所有物体都受到指向地心的万有引力。两极到赤道的万有引力方向都朝向地心。"
+      },
+      {
+        title: "第 2 步：加入离心力",
+        text: "地球自转后，非惯性参考系中出现离心力。它在赤道最大、两极为零。"
+      },
+      {
+        title: "第 3 步：分解离心力",
+        text: "把离心力分成径向分量和切向分量。径向分量会减小重力大小，切向分量会让有效重力略偏向赤道。"
+      },
+      {
+        title: "第 4 步：得到有效重力",
+        text: "把万有引力和离心力矢量相加，就得到有效重力。中纬度最能看出偏角。"
+      },
+      {
+        title: "第 5 步：观察有效重力加速度",
+        text: "把有效重力除以质量，得到有效重力加速度。它与质量无关，更适合比较不同地点的场强。"
+      }
+    ];
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function degToRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function radToDeg(rad) {
+      return rad * 180 / Math.PI;
+    }
+
+    function format(value, digits = 3) {
+      if (Math.abs(value) >= 1e4 || Math.abs(value) < 1e-2) return value.toExponential(digits);
+      return value.toFixed(digits);
+    }
+
+    function vec(x, y, z) {
+      return { x, y, z };
+    }
+
+    function add(a, b) {
+      return vec(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+
+    function sub(a, b) {
+      return vec(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    function scale(v, s) {
+      return vec(v.x * s, v.y * s, v.z * s);
+    }
+
+    function dot(a, b) {
+      return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
+    function cross(a, b) {
+      return vec(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+      );
+    }
+
+    function length(v) {
+      return Math.hypot(v.x, v.y, v.z);
+    }
+
+    function normalize(v) {
+      const len = length(v) || 1;
+      return scale(v, 1 / len);
+    }
+
+    function latLonToVector(latDeg, lonDeg) {
+      const lat = degToRad(latDeg);
+      const lon = degToRad(lonDeg);
+      return vec(
+        Math.cos(lat) * Math.cos(lon),
+        Math.sin(lat),
+        Math.cos(lat) * Math.sin(lon)
+      );
+    }
+
+    function vectorToLatLon(v) {
+      const n = normalize(v);
+      return {
+        lat: radToDeg(Math.asin(clamp(n.y, -1, 1))),
+        lon: radToDeg(Math.atan2(n.z, n.x))
+      };
+    }
+
+    function rotateY(v, angle) {
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      return vec(c * v.x + s * v.z, v.y, -s * v.x + c * v.z);
+    }
+
+    function rotateX(v, angle) {
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      return vec(v.x, c * v.y - s * v.z, s * v.y + c * v.z);
+    }
+
+    function worldToView(v) {
+      return rotateX(rotateY(v, viewYaw), viewPitch);
+    }
+
+    function project(v, radiusPx, centerX, centerY) {
+      const view = worldToView(v);
+      return {
+        x: centerX + view.x * radiusPx,
+        y: centerY - view.y * radiusPx,
+        z: view.z
+      };
+    }
+
+    function createObject(lat = 0, lon = 0, mass = 1) {
+      return {
+        id: nextId++,
+        name: `物体 ${nextId - 1}`,
+        lat,
+        lon,
+        mass,
+        color: colors[(nextId - 2) % colors.length]
+      };
+    }
+
+    function objectPhysics(latDeg, lonDeg, mass) {
+      const { G, M, R, omega } = constants;
+      const rHat = latLonToVector(latDeg, lonDeg);
+      const axis = vec(0, 1, 0);
+      const g0 = G * M / (R * R);
+      const FgMag = mass * g0;
+
+      const gravVec = scale(rHat, -FgMag);
+
+      const rWorld = scale(rHat, R);
+      const omegaVec = vec(0, omega, 0);
+      const aCentVec = scale(cross(omegaVec, cross(omegaVec, rWorld)), -1);
+      const centVec = scale(aCentVec, mass);
+
+      const outward = rHat;
+      let tangentToEquator = sub(axis, scale(outward, dot(axis, outward)));
+      tangentToEquator = length(tangentToEquator) < 1e-12 ? vec(0, 0, 0) : normalize(tangentToEquator);
+      tangentToEquator = latDeg >= 0 ? scale(tangentToEquator, -1) : tangentToEquator;
+
+      const centRadialMag = dot(centVec, outward);
+      const centRadialVec = scale(outward, centRadialMag);
+      const centTangentialVec = sub(centVec, centRadialVec);
+      const centTangentialMag = length(centTangentialVec);
+
+      const effVec = add(gravVec, centVec);
+      const effMag = length(effVec);
+      const effAccVec = scale(effVec, 1 / mass);
+      const effAccMag = length(effAccVec);
+
+      const angle = Math.acos(
+        clamp(dot(normalize(gravVec), normalize(effVec)), -1, 1)
+      ) * 180 / Math.PI;
+
+      return {
+        rHat,
+        g0,
+        gravVec,
+        centVec,
+        centRadialVec,
+        centTangentialVec,
+        effVec,
+        effAccVec,
+        FgMag,
+        centMag: length(centVec),
+        centRadialMag: Math.abs(centRadialMag),
+        centTangentialMag,
+        effMag,
+        effAccMag,
+        angle,
+        localRadius: R * Math.cos(degToRad(latDeg))
+      };
+    }
+
+    function renderControls() {
+      objectList.innerHTML = "";
+      objects.forEach((obj) => {
+        const p = objectPhysics(obj.lat, obj.lon, obj.mass);
+        const card = document.createElement("div");
+        card.className = "object-card";
+        card.innerHTML = `
+          <div class="object-header">
+            <div class="badge"><span class="dot" style="background:${obj.color}"></span>${obj.name}</div>
+            <button class="secondary" data-remove="${obj.id}">删除</button>
+          </div>
+          <div class="row">
+            <label>纬度 φ（度）</label>
+            <input data-lat="${obj.id}" type="number" min="-90" max="90" step="0.1" value="${obj.lat.toFixed(1)}" />
+          </div>
+          <div class="row">
+            <label>经度 λ（度）</label>
+            <input data-lon="${obj.id}" type="number" min="-180" max="180" step="0.1" value="${obj.lon.toFixed(1)}" />
+          </div>
+          <div class="row">
+            <label>质量 m（kg）</label>
+            <input data-mass="${obj.id}" type="number" min="0.1" step="0.1" value="${obj.mass.toFixed(1)}" />
+          </div>
+          <div class="grid-2">
+            <div><strong>${obj.lat.toFixed(1)}° / ${obj.lon.toFixed(1)}°</strong>当前位置</div>
+            <div><strong>${format(p.angle, 4)}°</strong>有效重力偏角</div>
+            <div><strong>${format(p.FgMag)} N</strong>万有引力</div>
+            <div><strong>${format(p.centMag)} N</strong>离心力</div>
+            <div><strong>${format(p.effMag)} N</strong>有效重力</div>
+            <div><strong>${format(p.effAccMag)} m/s²</strong>有效重力加速度</div>
+            <div><strong>${format(p.centRadialMag)} N</strong>离心径向分量</div>
+            <div><strong>${format(p.centTangentialMag)} N</strong>离心切向分量</div>
+            <div><strong>${format(p.centMag / p.FgMag * 100, 4)}%</strong>离心力 / 万有引力</div>
+            <div><strong>${format((p.FgMag - p.effMag) / p.FgMag * 100, 4)}%</strong>有效重力减小比例</div>
+          </div>
+        `;
+        objectList.appendChild(card);
+        if (obj.id === focusedObjectId) {
+          card.style.outline = `2px solid ${obj.color}`;
+        }
+
+        card.querySelector(`[data-remove="${obj.id}"]`).addEventListener("click", () => {
+          objects = objects.filter((item) => item.id !== obj.id);
+          if (focusedObjectId === obj.id) focusedObjectId = null;
+          render();
+        });
+        card.querySelector(`[data-lat="${obj.id}"]`).addEventListener("input", (e) => {
+          obj.lat = clamp(Number(e.target.value) || 0, -90, 90);
+          render();
+        });
+        card.querySelector(`[data-lon="${obj.id}"]`).addEventListener("input", (e) => {
+          const value = Number(e.target.value) || 0;
+          obj.lon = ((value + 180) % 360 + 360) % 360 - 180;
+          render();
+        });
+        card.querySelector(`[data-mass="${obj.id}"]`).addEventListener("input", (e) => {
+          obj.mass = Math.max(0.1, Number(e.target.value) || 0.1);
+          render();
+        });
+        card.addEventListener("click", () => {
+          focusedObjectId = obj.id;
+          render();
+        });
+      });
+    }
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    function drawArrow2D(start, end, color, label) {
+      const vx = end.x - start.x;
+      const vy = end.y - start.y;
+      const len = Math.hypot(vx, vy);
+      if (len < 2) return;
+      const angle = Math.atan2(vy, vx);
+      const head = 10;
+
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(end.x - head * Math.cos(angle + Math.PI / 6), end.y - head * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      if (ui.showLabels.checked && label) {
+        ctx.font = "12px sans-serif";
+        ctx.fillText(label, end.x + 8, end.y + 4);
+      }
+    }
+
+    function drawSphere(centerX, centerY, radiusPx) {
+      const gradient = ctx.createRadialGradient(
+        centerX - radiusPx * 0.28,
+        centerY - radiusPx * 0.34,
+        radiusPx * 0.24,
+        centerX,
+        centerY,
+        radiusPx
+      );
+      gradient.addColorStop(0, "#cfe9ff");
+      gradient.addColorStop(0.45, "#79b8f1");
+      gradient.addColorStop(1, "#1f5fae");
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radiusPx, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.lineWidth = 1;
+      for (let lat = -60; lat <= 60; lat += 30) {
+        const pts = [];
+        for (let lon = -180; lon <= 180; lon += 4) {
+          const p = project(latLonToVector(lat, lon), radiusPx, centerX, centerY);
+          if (p.z > -0.03) pts.push(p);
+        }
+        if (pts.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.stroke();
+        }
+      }
+
+      for (let lon = -150; lon <= 180; lon += 30) {
+        const pts = [];
+        for (let lat = -90; lat <= 90; lat += 3) {
+          const p = project(latLonToVector(lat, lon), radiusPx, centerX, centerY);
+          if (p.z > -0.03) pts.push(p);
+        }
+        if (pts.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.stroke();
+        }
+      }
+
+      ctx.strokeStyle = "rgba(18,37,62,0.18)";
+      ctx.lineWidth = 2;
+      const northAxis = project(vec(0, 1.18, 0), radiusPx, centerX, centerY);
+      const southAxis = project(vec(0, -1.18, 0), radiusPx, centerX, centerY);
+      ctx.beginPath();
+      ctx.moveTo(northAxis.x, northAxis.y);
+      ctx.lineTo(southAxis.x, southAxis.y);
+      ctx.stroke();
+    }
+
+    function drawObject(obj, centerX, centerY, radiusPx, maxForce) {
+      const p = objectPhysics(obj.lat, obj.lon, obj.mass);
+      const anchor = project(p.rHat, radiusPx, centerX, centerY);
+      const vectorScale = Number(ui.vectorScale.value) / maxForce;
+      const effAccScale = Number(ui.vectorScale.value) / 12;
+      const teachingMode = ui.teachingMode.checked;
+      const centrifugalBoost = Number(ui.centrifugalBoost.value);
+      const centScale = teachingMode ? vectorScale * centrifugalBoost : vectorScale;
+
+      ctx.fillStyle = obj.color;
+      ctx.beginPath();
+      ctx.arc(anchor.x, anchor.y, anchor.z >= 0 ? 8 : 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (ui.showLabels.checked) {
+        ctx.fillStyle = obj.color;
+        ctx.font = "13px sans-serif";
+        ctx.fillText(`${obj.name}  φ=${obj.lat.toFixed(1)}°`, anchor.x + 10, anchor.y - 10);
+      }
+
+      function endpoint(vector3, scaleFactor) {
+        const viewAnchor = worldToView(p.rHat);
+        const viewTip = add(viewAnchor, scale(worldToView(vector3), scaleFactor / radiusPx));
+        return {
+          x: centerX + viewTip.x * radiusPx,
+          y: centerY - viewTip.y * radiusPx
+        };
+      }
+
+      const showGrav = ui.showGrav.checked && stepIndex >= 0;
+      const showCent = ui.showCent.checked && stepIndex >= 1;
+      const showDecomp = ui.showDecomp.checked && stepIndex >= 2;
+      const showEff = ui.showEff.checked && stepIndex >= 3;
+      const showAcc = ui.showAcc.checked && stepIndex >= 4;
+
+      if (showGrav) {
+        drawArrow2D(anchor, endpoint(p.gravVec, vectorScale), getComputedStyle(document.documentElement).getPropertyValue("--grav").trim(), "F_g");
+      }
+      if (showCent) {
+        drawArrow2D(
+          anchor,
+          endpoint(p.centVec, centScale),
+          getComputedStyle(document.documentElement).getPropertyValue("--cent").trim(),
+          teachingMode ? `F_c × ${centrifugalBoost}` : "F_c"
+        );
+      }
+      if (showEff) {
+        drawArrow2D(anchor, endpoint(p.effVec, vectorScale), getComputedStyle(document.documentElement).getPropertyValue("--eff").trim(), "F_eff");
+      }
+      if (showAcc) {
+        drawArrow2D(anchor, endpoint(p.effAccVec, effAccScale), getComputedStyle(document.documentElement).getPropertyValue("--acc").trim(), "g_eff");
+      }
+      if (showDecomp) {
+        drawArrow2D(
+          anchor,
+          endpoint(p.centRadialVec, centScale),
+          getComputedStyle(document.documentElement).getPropertyValue("--radial").trim(),
+          teachingMode ? `F_c,r × ${centrifugalBoost}` : "F_c,r"
+        );
+        drawArrow2D(
+          anchor,
+          endpoint(p.centTangentialVec, centScale),
+          getComputedStyle(document.documentElement).getPropertyValue("--tangent").trim(),
+          teachingMode ? `F_c,t × ${centrifugalBoost}` : "F_c,t"
+        );
+      }
+
+      if (teachingMode && ui.showLabels.checked) {
+        ctx.fillStyle = "rgba(16, 36, 60, 0.8)";
+        ctx.font = "12px sans-serif";
+        ctx.fillText(`教学模式：离心项已额外放大 ${centrifugalBoost} 倍`, anchor.x + 10, anchor.y + 28);
+      }
+
+      return {
+        ...anchor,
+        physics: p,
+        object: obj
+      };
+    }
+
+    function renderScene() {
+      resizeCanvas();
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+
+      const centerX = width * 0.5;
+      const centerY = height * 0.55;
+      const radiusPx = Number(ui.earthScale.value);
+
+      drawSphere(centerX, centerY, radiusPx);
+
+      const maxForce = Math.max(...objects.map((obj) => objectPhysics(obj.lat, obj.lon, obj.mass).FgMag), 1);
+      const projectedObjects = objects
+        .map((obj) => drawObject(obj, centerX, centerY, radiusPx, maxForce))
+        .sort((a, b) => a.z - b.z);
+
+      renderState = { centerX, centerY, radiusPx, projectedObjects };
+      drawMagnifier(maxForce);
+      updateStepStatus();
+    }
+
+    function drawMagnifier(maxForce) {
+      const magnifierBody = document.getElementById("magnifierBody");
+      if (magnifierCollapsed) {
+        magnifierBody.classList.add("collapsed");
+        return;
+      }
+      magnifierBody.classList.remove("collapsed");
+      const ratio = window.devicePixelRatio || 1;
+      const rect = magnifierCanvas.getBoundingClientRect();
+      magnifierCanvas.width = rect.width * ratio;
+      magnifierCanvas.height = rect.height * ratio;
+      magCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const width = rect.width;
+      const height = rect.height;
+      magCtx.clearRect(0, 0, width, height);
+
+      const focused = objects.find((o) => o.id === focusedObjectId)
+        || [...objects]
+          .map((obj) => ({ obj, p: project(objectPhysics(obj.lat, obj.lon, obj.mass).rHat, 1, 0, 0) }))
+          .sort((a, b) => b.p.z - a.p.z)[0]?.obj;
+
+      if (!focused) return;
+      const p = objectPhysics(focused.lat, focused.lon, focused.mass);
+      const center = { x: width * 0.24, y: height * 0.6 };
+      const baseScale = 72 / maxForce;
+      const centScale = baseScale * Number(ui.centrifugalBoost.value) * 1.2;
+      const accScale = 42;
+
+      magCtx.fillStyle = "rgba(16,36,60,0.8)";
+      magCtx.font = "13px sans-serif";
+      magCtx.fillText(`${focused.name} 局部放大`, 12, 18);
+      magCtx.fillText(`纬度 ${focused.lat.toFixed(1)}°，经度 ${focused.lon.toFixed(1)}°`, 12, 36);
+
+      magCtx.fillStyle = focused.color;
+      magCtx.beginPath();
+      magCtx.arc(center.x, center.y, 8, 0, Math.PI * 2);
+      magCtx.fill();
+
+      const showGrav = ui.showGrav.checked && stepIndex >= 0;
+      const showCent = ui.showCent.checked && stepIndex >= 1;
+      const showDecomp = ui.showDecomp.checked && stepIndex >= 2;
+      const showEff = ui.showEff.checked && stepIndex >= 3;
+      const showAcc = ui.showAcc.checked && stepIndex >= 4;
+
+      function end2D(v, s) {
+        return {
+          x: center.x + v.x * s,
+          y: center.y - v.y * s
+        };
+      }
+
+      const grav2 = { x: p.gravVec.x, y: p.gravVec.y };
+      const cent2 = { x: p.centVec.x, y: p.centVec.y };
+      const eff2 = { x: p.effVec.x, y: p.effVec.y };
+      const acc2 = { x: p.effAccVec.x, y: p.effAccVec.y };
+      const cr2 = { x: p.centRadialVec.x, y: p.centRadialVec.y };
+      const ct2 = { x: p.centTangentialVec.x, y: p.centTangentialVec.y };
+
+      if (showGrav) drawArrow2DMag(center, end2D(grav2, baseScale), getCss("--grav"), "F_g");
+      if (showCent) drawArrow2DMag(center, end2D(cent2, centScale), getCss("--cent"), `F_c × ${Number(ui.centrifugalBoost.value)}`);
+      if (showDecomp) {
+        drawArrow2DMag(center, end2D(cr2, centScale), getCss("--radial"), "F_c,r");
+        drawArrow2DMag(center, end2D(ct2, centScale), getCss("--tangent"), "F_c,t");
+      }
+      if (showEff) drawArrow2DMag(center, end2D(eff2, baseScale), getCss("--eff"), "F_eff");
+      if (showAcc) drawArrow2DMag(center, end2D(acc2, accScale), getCss("--acc"), "g_eff");
+
+      magCtx.fillStyle = "rgba(16,36,60,0.82)";
+      magCtx.font = "12px sans-serif";
+      magCtx.fillText(`离心力 / 万有引力 = ${format(p.centMag / p.FgMag * 100, 4)}%`, 12, height - 54);
+      magCtx.fillText(`有效重力减小比例 = ${format((p.FgMag - p.effMag) / p.FgMag * 100, 4)}%`, 12, height - 36);
+      magCtx.fillText(`偏角 = ${format(p.angle, 4)}°`, 12, height - 18);
+    }
+
+    function getCss(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function drawArrow2DMag(start, end, color, label) {
+      const vx = end.x - start.x;
+      const vy = end.y - start.y;
+      const len = Math.hypot(vx, vy);
+      if (len < 2) return;
+      const angle = Math.atan2(vy, vx);
+      const head = 10;
+      magCtx.strokeStyle = color;
+      magCtx.fillStyle = color;
+      magCtx.lineWidth = 3;
+      magCtx.beginPath();
+      magCtx.moveTo(start.x, start.y);
+      magCtx.lineTo(end.x, end.y);
+      magCtx.stroke();
+      magCtx.beginPath();
+      magCtx.moveTo(end.x, end.y);
+      magCtx.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
+      magCtx.lineTo(end.x - head * Math.cos(angle + Math.PI / 6), end.y - head * Math.sin(angle + Math.PI / 6));
+      magCtx.closePath();
+      magCtx.fill();
+      magCtx.font = "12px sans-serif";
+      magCtx.fillText(label, end.x + 8, end.y + 4);
+    }
+
+    function updateStepStatus() {
+      const el = document.getElementById("stepStatus");
+      const step = steps[stepIndex];
+      el.innerHTML = `<strong>${step.title}</strong><br>${step.text}`;
+      const stepsBody = document.getElementById("stepsBody");
+      if (stepsCollapsed) {
+        stepsBody.classList.add("collapsed");
+      } else {
+        stepsBody.classList.remove("collapsed");
+      }
+      updateSubstitutionPanel();
+    }
+
+    function setStep(index) {
+      stepIndex = clamp(index, 0, steps.length - 1);
+      renderScene();
+    }
+
+    function toggleAutoStep() {
+      const btn = document.getElementById("autoStepBtn");
+      if (autoStepTimer) {
+        clearInterval(autoStepTimer);
+        autoStepTimer = null;
+        btn.textContent = "自动播放";
+        return;
+      }
+      btn.textContent = "停止自动";
+      autoStepTimer = setInterval(() => {
+        if (stepIndex >= steps.length - 1) {
+          setStep(0);
+        } else {
+          setStep(stepIndex + 1);
+        }
+      }, 2200);
+    }
+
+    function getFocusedObject() {
+      return objects.find((o) => o.id === focusedObjectId)
+        || [...objects]
+          .map((obj) => ({ obj, p: project(objectPhysics(obj.lat, obj.lon, obj.mass).rHat, 1, 0, 0) }))
+          .sort((a, b) => b.p.z - a.p.z)[0]?.obj
+        || null;
+    }
+
+    function updateSubstitutionPanel() {
+      const el = document.getElementById("formulaSubstitution");
+      const obj = getFocusedObject();
+      if (!obj) {
+        el.innerHTML = "当前没有可用物体。";
+        return;
+      }
+      const p = objectPhysics(obj.lat, obj.lon, obj.mass);
+      const phi = degToRad(obj.lat);
+      const { G, M, R, omega } = constants;
+      const g0 = G * M / (R * R);
+      const ac = omega * omega * R * Math.cos(phi);
+      const acr = omega * omega * R * Math.cos(phi) * Math.cos(phi);
+      const act = omega * omega * R * Math.sin(phi) * Math.cos(phi);
+      el.innerHTML = `
+        <strong>${obj.name} 的公式代入</strong><br>
+        φ = ${obj.lat.toFixed(1)}°，m = ${obj.mass.toFixed(1)} kg<br>
+        g₀ = GM/R² = ${format(g0, 6)} m/s²<br>
+        F_g = m·g₀ = ${format(p.FgMag, 6)} N<br>
+        a_c = ω²Rcosφ = ${format(ac, 6)} m/s²<br>
+        F_c = m·a_c = ${format(p.centMag, 6)} N<br>
+        F_c,r = mω²Rcos²φ = ${format(Math.abs(obj.mass * acr), 6)} N<br>
+        F_c,t = mω²Rsinφcosφ = ${format(Math.abs(obj.mass * act), 6)} N<br>
+        F_eff = ${format(p.effMag, 6)} N，g_eff = ${format(p.effAccMag, 6)} m/s²<br>
+        偏角 α = ${format(p.angle, 6)}°
+      `;
+    }
+
+    function render() {
+      renderControls();
+      renderScene();
+    }
+
+    function defaultObjects() {
+      objects = [
+        createObject(90, 0, 1),
+        createObject(45, 10, 1),
+        createObject(0, 40, 1)
+      ];
+      render();
+    }
+
+    function surfacePointFromCanvas(x, y, frontHemisphere = true) {
+      if (!renderState) return null;
+      const { centerX, centerY, radiusPx } = renderState;
+      const nx = (x - centerX) / radiusPx;
+      const ny = (centerY - y) / radiusPx;
+      const r2 = nx * nx + ny * ny;
+      if (r2 > 1) return null;
+      const nz = Math.sqrt(Math.max(0, 1 - r2));
+      let viewVec = vec(nx, ny, frontHemisphere ? nz : -nz);
+      viewVec = rotateX(viewVec, -viewPitch);
+      viewVec = rotateY(viewVec, -viewYaw);
+      return normalize(viewVec);
+    }
+
+    function pickObject(x, y) {
+      if (!renderState) return null;
+      const candidates = renderState.projectedObjects
+        .map((item) => ({
+          ...item,
+          dist: Math.hypot(item.x - x, item.y - y)
+        }))
+        .filter((item) => item.dist < 14)
+        .sort((a, b) => b.z - a.z || a.dist - b.dist);
+      return candidates[0] || null;
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const picked = pickObject(x, y);
+      lastPointer = { x, y };
+
+      if (picked) {
+        draggingObjectId = picked.object.id;
+        dragFrontHemisphere = picked.z >= 0;
+        focusedObjectId = picked.object.id;
+      } else {
+        rotatingView = true;
+      }
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!lastPointer) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const dx = x - lastPointer.x;
+      const dy = y - lastPointer.y;
+      lastPointer = { x, y };
+
+      if (draggingObjectId !== null) {
+        const surface = surfacePointFromCanvas(x, y, dragFrontHemisphere);
+        if (surface) {
+          const ll = vectorToLatLon(surface);
+          const target = objects.find((obj) => obj.id === draggingObjectId);
+          if (target) {
+            target.lat = clamp(ll.lat, -90, 90);
+            target.lon = ((ll.lon + 180) % 360 + 360) % 360 - 180;
+            render();
+          }
+        }
+      } else if (rotatingView) {
+        viewYaw += dx * 0.01;
+        viewPitch = clamp(viewPitch + dy * 0.01, -1.2, 1.2);
+        renderScene();
+      }
+    });
+
+    function stopInteraction() {
+      draggingObjectId = null;
+      rotatingView = false;
+      lastPointer = null;
+    }
+
+    canvas.addEventListener("pointerup", stopInteraction);
+    canvas.addEventListener("pointercancel", stopInteraction);
+    canvas.addEventListener("pointerleave", () => {
+      if (!draggingObjectId && !rotatingView) lastPointer = null;
+    });
+
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const next = clamp(Number(ui.earthScale.value) - e.deltaY * 0.1, 180, 420);
+      ui.earthScale.value = String(next);
+      renderScene();
+    }, { passive: false });
+
+    document.getElementById("addObjectBtn").addEventListener("click", () => {
+      objects.push(createObject(20, -20, 1));
+      render();
+    });
+
+    document.getElementById("presetBtn").addEventListener("click", () => {
+      objects = [
+        createObject(90, 0, 1),
+        createObject(50, 20, 1),
+        createObject(20, -40, 1),
+        createObject(0, 60, 1)
+      ];
+      render();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      nextId = 1;
+      viewYaw = -0.72;
+      viewPitch = 0.33;
+      ui.vectorScale.value = "120";
+      ui.centrifugalBoost.value = "80";
+      ui.earthScale.value = "290";
+      ui.teachingMode.checked = true;
+      defaultObjects();
+    });
+
+    document.getElementById("prevStepBtn").addEventListener("click", () => setStep(stepIndex - 1));
+    document.getElementById("nextStepBtn").addEventListener("click", () => setStep(stepIndex + 1));
+    document.getElementById("resetStepBtn").addEventListener("click", () => setStep(0));
+    document.getElementById("autoStepBtn").addEventListener("click", toggleAutoStep);
+    document.getElementById("toggleMagnifierBtn").addEventListener("click", (e) => {
+      magnifierCollapsed = !magnifierCollapsed;
+      e.target.textContent = magnifierCollapsed ? "展开" : "收起";
+      renderScene();
+    });
+    document.getElementById("toggleStepsBtn").addEventListener("click", (e) => {
+      stepsCollapsed = !stepsCollapsed;
+      e.target.textContent = stepsCollapsed ? "展开" : "收起";
+      renderScene();
+    });
+    document.getElementById("pointNorthPoleBtn").addEventListener("click", () => {
+      const obj = getFocusedObject();
+      if (!obj) return;
+      obj.lat = 90;
+      obj.lon = 0;
+      focusedObjectId = obj.id;
+      render();
+    });
+    document.getElementById("pointMidLatBtn").addEventListener("click", () => {
+      const obj = getFocusedObject();
+      if (!obj) return;
+      obj.lat = 45;
+      obj.lon = 20;
+      focusedObjectId = obj.id;
+      render();
+    });
+    document.getElementById("pointEquatorBtn").addEventListener("click", () => {
+      const obj = getFocusedObject();
+      if (!obj) return;
+      obj.lat = 0;
+      obj.lon = 0;
+      focusedObjectId = obj.id;
+      render();
+    });
+    document.getElementById("unlockFocusBtn").addEventListener("click", () => {
+      focusedObjectId = null;
+      render();
+    });
+
+    Object.values(ui).forEach((element) => {
+      element.addEventListener("input", renderScene);
+      element.addEventListener("change", renderScene);
+    });
+
+    window.addEventListener("resize", renderScene);
+
+    defaultObjects();
+    updateStepStatus();
+  </script>
+</body>
+</html>
