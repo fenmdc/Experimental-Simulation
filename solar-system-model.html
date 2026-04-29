@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>太阳系模型演变 - 从地心说到日心说</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a2a 100%);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    
+    header {
+      background: rgba(0,0,0,0.6);
+      padding: 15px 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(10px);
+    }
+    
+    header h1 {
+      font-size: 1.5rem;
+      background: linear-gradient(90deg, #4fc3f7, #b388ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    
+    button:hover, button.active {
+      background: linear-gradient(90deg, #4fc3f7, #b388ff);
+      color: #000;
+    }
+    
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .sidebar {
+      width: 280px;
+      background: rgba(0,0,0,0.4);
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .sidebar h2 {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      color: #4fc3f7;
+    }
+    
+    .model-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .model-btn {
+      padding: 12px 15px;
+      text-align: left;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .model-btn:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: #4fc3f7;
+    }
+    
+    .model-btn.active {
+      background: linear-gradient(90deg, rgba(79,195,247,0.3), rgba(179,136,255,0.3));
+      border-color: #4fc3f7;
+    }
+    
+    .model-btn .name {
+      font-weight: bold;
+      display: block;
+    }
+    
+    .model-btn .year {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    
+    .model-btn .type {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 5px;
+    }
+    
+    .type-geocentric { background: rgba(255,152,0,0.3); color: #ffcc80; }
+    .type-heliocentric { background: rgba(76,175,80,0.3); color: #a5d6a7; }
+    .type-modern { background: rgba(33,150,243,0.3); color: #90caf9; }
+    
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #solarCanvas {
+      border-radius: 10px;
+    }
+    
+    .info-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .info-panel h3 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #b388ff;
+      flex: 1;
+    }
+    
+    .info-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .toggle-btn {
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      cursor: pointer;
+      color: #aaa;
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-btn:hover {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    
+    .description-content {
+      overflow: hidden;
+      transition: all 0.4s ease;
+      max-height: 400px;
+      opacity: 1;
+      padding: 10px 0;
+    }
+    
+    .description-content.collapsed {
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    
+    .info-panel p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #ccc;
+      white-space: pre-wrap;
+      margin: 0;
+    }
+    
+    .legend {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.7);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+    }
+    
+    .speed-control input {
+      width: 100px;
+    }
+    
+    .zoom-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+    }
+    
+    .zoom-control input {
+      width: 100px;
+    }
+    
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    
+    .play-controls {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .play-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌍 太阳系模型演变 - 从地心说到日心说</h1>
+      <div class="controls">
+        <div class="speed-control">
+          <label>速度:</label>
+          <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+          <span id="speedValue">1x</span>
+        </div>
+        <div class="zoom-control">
+          <label>缩放:</label>
+          <input type="range" id="zoomSlider" min="1" max="4" step="0.5" value="1">
+          <span id="zoomValue">1x</span>
+        </div>
+        <button id="playBtn" class="play-btn">▶</button>
+      </div>
+    </header>
+    
+    <div class="main-content">
+      <div class="sidebar">
+        <h2>选择模型</h2>
+        <div class="model-list" id="modelList"></div>
+      </div>
+      
+      <div class="canvas-container">
+        <canvas id="solarCanvas"></canvas>
+        <div class="legend" id="legend"></div>
+        
+        <div class="info-panel">
+          <div class="info-header">
+            <h3 id="modelTitle">请选择一个模型</h3>
+            <button id="toggleDescBtn" class="toggle-btn">▼ 展开</button>
+          </div>
+          <div id="descriptionContainer" class="description-content">
+            <p id="modelDescription">选择一个太阳系模型来查看其历史背景和特点。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 太阳系模型数据
+    const models = [
+      {
+        id: 'aristotle',
+        name: '亚里士多德模型',
+        englishName: 'Aristotle Model',
+        year: '约公元前350年',
+        type: '地心说',
+        category: 'geocentric',
+        cosmosType: '地心说',
+        description: '亚里士多德提出了最早的地心说模型。他认为宇宙是完美的同心球体系，地球位于中心静止不动，所有天体沿着完美的圆形轨道围绕地球运动。这个模型基于"完美"和"不变性"的哲学思想，认为天体是由第五元素"以太"构成，永远保持完美的圆周运动。',
+        planets: [
+          { name: '月亮', distance: 40, color: '#c0c0c0', speed: 0.02 },
+          { name: '水星', distance: 60, color: '#b8860b', speed: 0.015 },
+          { name: '金星', distance: 85, color: '#daa520', speed: 0.012 },
+          { name: '太阳', distance: 110, color: '#ffd700', speed: 0.01 },
+          { name: '火星', distance: 140, color: '#dc143c', speed: 0.008 },
+          { name: '木星', distance: 180, color: '#d2691e', speed: 0.005 },
+          { name: '土星', distance: 220, color: '#f4a460', speed: 0.003 }
+        ],
+        extraCircles: [
+          { name: '恒星天球', distance: 300, color: 'rgba(255,255,255,0.3)', type: 'sphere' }
+        ]
+      },
+      {
+        id: 'ptolemy',
+        name: '托勒密模型',
+        englishName: 'Ptolemaic Model',
+        year: '约公元150年',
+        type: '地心���',
+        category: 'geocentric',
+        cosmosType: '地心说',
+        description: '托勒密在《 Almagest 》中系统化地提出了本轮-均轮系统。为了解释行星的逆行运动，他让行星在一个小圆（本轮）上运动，而本轮的中心则在围绕地球的大圆（均轮）上运动。这虽然能更好地预测行星位置，但需要几十个本轮才能精确拟合观测数据。',
+        planets: [
+          { name: '月亮', distance: 35, color: '#c0c0c0', speed: 0.025, hasEpicycle: true, epicycleSpeed: 0.08 },
+          { name: '水星', distance: 55, color: '#b8860b', speed: 0.018, hasEpicycle: true, epicycleSpeed: 0.12 },
+          { name: '金星', distance: 80, color: '#daa520', speed: 0.014, hasEpicycle: true, epicycleSpeed: 0.1 },
+          { name: '太阳', distance: 110, color: '#ffd700', speed: 0.01 },
+          { name: '火星', distance: 145, color: '#dc143c', speed: 0.008, hasEpicycle: true, epicycleSpeed: 0.06 },
+          { name: '木星', distance: 185, color: '#d2691e', speed: 0.005, hasEpicycle: true, epicycleSpeed: 0.04 },
+          { name: '土星', distance: 225, color: '#f4a460', speed: 0.003, hasEpicycle: true, epicycleSpeed: 0.03 }
+        ],
+        extraCircles: [
+          { name: '恒星天球', distance: 280, color: 'rgba(255,255,255,0.2)', type: 'sphere' }
+        ]
+      },
+      {
+        id: 'tycho',
+        name: '第谷·布拉赫模型',
+        englishName: 'Tycho Brahe Model',
+        year: '1588年',
+        type: '混合模型',
+        category: 'geocentric',
+        cosmosType: '混合系统',
+        description: '第谷·布拉赫提出了一个介于地心说和日心说之间的混合模型。地球仍处于中心静止不动，但月球和太阳围绕地球转，而其他行星（包括火星、金星、水星）则围绕太阳转。这既保留了地心说的"地球静止"观念，又能解释部分行星运动的简和谐性。',
+        planets: [
+          { name: '月亮', orbitCenter: 'Earth', distance: 40, color: '#c0c0c0', speed: 0.02 },
+          { name: '水星', orbitCenter: 'Sun', distance: 55, color: '#b8860b', speed: 0.015, parentOrbitRadius: 115 },
+          { name: '金星', orbitCenter: 'Sun', distance: 80, color: '#daa520', speed: 0.012, parentOrbitRadius: 115 },
+          { name: '太阳', orbitCenter: 'Earth', distance: 115, color: '#ffd700', speed: 0.008 },
+          { name: '火星', orbitCenter: 'Sun', distance: 110, color: '#dc143c', speed: 0.006, parentOrbitRadius: 115 },
+          { name: '木星', orbitCenter: 'Sun', distance: 155, color: '#d2691e', speed: 0.004, parentOrbitRadius: 115 },
+          { name: '土星', orbitCenter: 'Sun', distance: 195, color: '#f4a460', speed: 0.002, parentOrbitRadius: 115 }
+        ],
+        extraCircles: [
+          { name: '恒星天球', distance: 280, color: 'rgba(255,255,255,0.2)', type: 'sphere' }
+        ]
+      },
+      {
+        id: 'aristarchus',
+        name: '阿里斯塔克模型',
+        englishName: 'Aristarchus Model',
+        year: '约公元前280年',
+        type: '日心说',
+        category: 'heliocentric',
+        cosmosType: '早期日心说',
+        description: '阿里斯塔克是第一个提出日心说想法的古希腊天文学家。他认为太阳位于中心，地球和其他行星围绕太阳旋转，地球还绕自己的轴自转。但由于当时人们的直觉认知和宗教观念，这个革命性观点并未被接受。阿里斯塔克还通过几何方法计算了太阳、月球和地球的相对大小。',
+        planets: [
+          { name: '水星', distance: 40, color: '#b8860b', speed: 0.024, orbitCenter: 'Sun' },
+          { name: '金星', distance: 60, color: '#daa520', speed: 0.018, orbitCenter: 'Sun' },
+          { name: '地球', distance: 85, color: '#4169e1', speed: 0.014, orbitCenter: 'Sun' },
+          { name: '火星', distance: 115, color: '#dc143c', speed: 0.01, orbitCenter: 'Sun' },
+          { name: '木星', distance: 160, color: '#d2691e', speed: 0.005, orbitCenter: 'Sun' },
+          { name: '土星', distance: 210, color: '#f4a460', speed: 0.002, orbitCenter: 'Sun' }
+        ],
+        isHeliocentric: true
+      },
+      {
+        id: 'copernicus',
+        name: '哥白尼模型',
+        englishName: 'Copernican Model',
+        year: '1543年',
+        type: '日心说',
+        category: 'heliocentric',
+        cosmosType: '日心说',
+        description: '1543年，哥白尼发表了《天体运行论》，正式提出日心说模型。太阳位于宇宙中心，地球和其他行星围绕太阳转动。哥白尼保留了圆轨道，但用更少的本轮来拟合观测数据。这个模型简洁优美，但真正革命性的突破是确立了太阳作为中心的观念。',
+        planets: [
+          { name: '水星', distance: 35, color: '#b8860b', speed: 0.024, orbitCenter: 'Sun' },
+          { name: '金星', distance: 55, color: '#daa520', speed: 0.018, orbitCenter: 'Sun' },
+          { name: '地球', distance: 80, color: '#4169e1', speed: 0.014, orbitCenter: 'Sun' },
+          { name: '火星', distance: 110, color: '#dc143c', speed: 0.01, orbitCenter: 'Sun' },
+          { name: '木星', distance: 160, color: '#d2691e', speed: 0.005, orbitCenter: 'Sun' },
+          { name: '土星', distance: 220, color: '#f4a460', speed: 0.002, orbitCenter: 'Sun' }
+        ],
+        isHeliocentric: true,
+        showOrbitalPlanes: true
+      },
+      {
+        id: 'kepler',
+        name: '开普勒模型',
+        englishName: 'Keplerian Model',
+        year: '1609年',
+        type: '日心说',
+        category: 'heliocentric',
+        cosmosType: '椭圆轨道日心说',
+        description: '开普勒在分析第谷的精密观测数据后，发现行星不是做完美的圆周运动，而是沿椭圆轨道运行。他提出了著名的开普勒三定律：1) 行星轨道是椭圆，太阳位于焦点；2) 行星扫过面积相等；3) 轨道周期的平方与半长轴的立方成正比。这彻底抛离了圆形轨道的观念。',
+        planets: [
+          { name: '水星', distance: 40, color: '#b8860b', speed: 0.024, eccentricity: 0.2, orbitCenter: 'Sun' },
+          { name: '金星', distance: 60, color: '#daa520', speed: 0.018, eccentricity: 0.007, orbitCenter: 'Sun' },
+          { name: '地球', distance: 85, color: '#4169e1', speed: 0.014, eccentricity: 0.017, orbitCenter: 'Sun' },
+          { name: '火星', distance: 115, color: '#dc143c', speed: 0.01, eccentricity: 0.093, orbitCenter: 'Sun' },
+          { name: '木星', distance: 165, color: '#d2691e', speed: 0.005, eccentricity: 0.048, orbitCenter: 'Sun' },
+          { name: '土星', distance: 220, color: '#f4a460', speed: 0.002, eccentricity: 0.056, orbitCenter: 'Sun' }
+        ],
+        isHeliocentric: true,
+        useEllipticalOrbits: true
+      },
+      {
+        id: 'galileo',
+        name: '伽利略模型',
+        englishName: 'Galilean Model',
+        year: '1610年',
+        type: '日心说',
+        category: 'heliocentric',
+        cosmosType: '观测验证日心说',
+        description: '伽利略用自己发明的望远镜进行了开创性的天文观测。他发现了木星的四颗卫星（金星、木卫一、木卫二、木卫三），证明不是所有天体都围绕地球转。他还观察到金星有相位变化，金星土星光环等，这些观测证据有力支持了日心说。',
+        planets: [
+          { name: '水星', distance: 35, color: '#b8860b', speed: 0.024, orbitCenter: 'Sun' },
+          { name: '金星', distance: 55, color: '#daa520', speed: 0.018, orbitCenter: 'Sun', hasPhases: true },
+          { name: '地球', distance: 80, color: '#4169e1', speed: 0.014, orbitCenter: 'Sun' },
+          { name: '火星', distance: 110, color: '#dc143c', speed: 0.01, orbitCenter: 'Sun' },
+          { name: '木星', distance: 160, color: '#d2691e', speed: 0.005, orbitCenter: 'Sun', hasMoons: true, moonCount: 4 },
+          { name: '土星', distance: 220, color: '#f4a460', speed: 0.002, orbitCenter: 'Sun', hasRings: true }
+        ],
+        isHeliocentric: true,
+        showMoons: true
+      },
+      {
+        id: 'modern',
+        name: '现代太阳系模型',
+        englishName: 'Modern Solar System',
+        year: '21世纪',
+        type: '现代',
+        category: 'modern',
+        cosmosType: '现代行星系统',
+        description: '现代太阳系模型是基于数百年观测和探测的精确模型。太阳占整个系统质量的99.86%，八大行星按距离排列为：水星、金星、地球、火星、木星、土星、天王星、海王星。模型现在还包括了柯伊伯带、奥尔特云，以及数以千计的矮行星和小行星。现代模型让我们能精确预测日食、月食和行星位置。\n\n🪐 <strong>木星卫星系统</strong>：木星拥有95颗已确认的卫星，其中最重要的是1610年伽利略发现的四颗伽利略卫星：\n\n• <strong>木卫一(艾奥)</strong>：公转周期1.77天，是太阳系公转最快的卫星，表面有活火山\n• <strong>木卫二(欧罗巴)</strong>：公转周期3.55天，表面有冰下海洋，可能存在生命\n• <strong>木卫三(甘尼米德)</strong>：公转周期7.15天，太阳系最大卫星，有磁场\n• <strong>木卫四(卡利斯托)</strong>：公转周期16.69天，表面有最古老撞击坑\n\n🔄 <strong>轨道共振</strong>：这四颗卫星保持完美的1:2:4轨道共振（当木卫三公转2圈时，木卫一正好公转4圈）。许多非伽利略卫星有逆行轨道（方向与木星自转相反）。,',
+        planets: [
+          { name: '水星', distance: 30, color: '#b8860b', speed: 0.024, orbitCenter: 'Sun', realPeriod: '88天' },
+          { name: '金星', distance: 45, color: '#daa520', speed: 0.018, orbitCenter: 'Sun', realPeriod: '225天' },
+          { name: '地球', distance: 60, color: '#4169e1', speed: 0.014, orbitCenter: 'Sun', realPeriod: '365天', hasMoon: true },
+          { name: '火星', distance: 80, color: '#dc143c', speed: 0.01, orbitCenter: 'Sun', realPeriod: '687天' },
+          { name: '木星', distance: 120, color: '#d2691e', speed: 0.005, orbitCenter: 'Sun', realPeriod: '12年', hasMoons: true, moonCount: 95 },
+          { name: '土星', distance: 165, color: '#f4a460', speed: 0.003, orbitCenter: 'Sun', realPeriod: '29年', hasRings: true },
+          { name: '天王星', distance: 210, color: '#40e0d0', speed: 0.002, orbitCenter: 'Sun', realPeriod: '84年' },
+          { name: '海王星', distance: 250, color: '#4169e1', speed: 0.001, orbitCenter: 'Sun', realPeriod: '165年' }
+        ],
+        isHeliocentric: true,
+        showAsteroidBelt: true,
+        showKuiperBelt: true,
+        accurateScale: true
+      }
+    ];
+
+    // Canvas 上下文
+    const canvas = document.getElementById('solarCanvas');
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    let isPlaying = true;
+    let speed = 1;
+    let zoom = 1;
+    let time = 0;
+    let currentModel = null;
+    let stars = [];
+
+    // 初始化画布大小
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      const size = Math.min(container.clientWidth - 40, container.clientHeight - 40, 800);
+      canvas.width = size;
+      canvas.height = size;
+      generateStars();
+    }
+
+    // 生成背景星星
+    function generateStars() {
+      stars = [];
+      for (let i = 0; i < 200; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 1.5 + 0.5,
+          brightness: Math.random()
+        });
+      }
+    }
+
+    // 绘制背景
+    function drawBackground() {
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 绘制星星
+      stars.forEach(star => {
+        const twinkle = Math.sin(time * 2 + star.brightness * 10) * 0.3 + 0.7;
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness * twinkle})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // 绘制轨道
+    function drawOrbit(x, y, radius, color, eccentricity = 0) {
+      if (eccentricity > 0) {
+        // 绘制椭圆轨道
+        const a = radius;
+        const b = radius * Math.sqrt(1 - eccentricity * eccentricity);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(x + radius * eccentricity, y, a, b, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // 绘制本轮
+    function drawEpicycle(centerX, centerY, radius, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // 绘制均轮（更明显的环）
+    function drawDeferentRing(centerX, centerY, radius, color) {
+      ctx.strokeStyle = color + '60';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 计算位置
+    function calculatePosition(angle, distance, centerX, centerY, eccentricity = 0, parentX = 0, parentY = 0) {
+      if (eccentricity > 0) {
+        const a = distance;
+        const b = distance * Math.sqrt(1 - eccentricity * eccentricity);
+        const x = centerX + parentX + a * Math.cos(angle);
+        const y = centerY + parentY + b * Math.sin(angle);
+        return { x, y };
+      }
+      return {
+        x: centerX + parentX + distance * Math.cos(angle),
+        y: centerY + parentY + distance * Math.sin(angle)
+      };
+    }
+
+    // 绘制中心天体
+    function drawCenterBody(x, y, radius, color, name) {
+      // 光晕
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius * 2);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(0.5, color + '88');
+      gradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 实体
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 绘制行星
+    function drawPlanet(x, y, radius, color, name, hasRings = false) {
+      // 行星阴影效果
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 阴影
+      const gradient = ctx.createRadialGradient(x - radius * 0.3, y - radius * 0.3, 0, x, y, radius);
+      gradient.addColorStop(0, 'rgba(255,255,255,0.3)');
+      gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 土星光环
+      if (hasRings) {
+        ctx.strokeStyle = 'rgba(210, 180, 140, 0.6)';
+        ctx.lineWidth = radius * 0.8;
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 1.8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // 绘制卫星
+    function drawMoons(centerX, centerY, planetRadius, color, count, time) {
+      // 伽利略卫星的详细轨道参数（真实周期的相对比例）
+      const galileanMoons = [
+        { name: '木卫一', orbitScale: 2.0, speed: 4.0, color: '#ffdd44' },    // 1.77天
+        { name: '木卫二', orbitScale: 2.8, speed: 2.5, color: '#aaddff' },    // 3.55天
+        { name: '木卫三', orbitScale: 3.8, speed: 1.5, color: '#ffccaa' },    // 7.15天
+        { name: '木卫四', orbitScale: 5.2, speed: 0.7, color: '#ccaaff' },    // 16.69天
+      ];
+      
+      // 如果是伽利略卫星（4颗），绘制特定的轨道
+      if (count === 4 || count <= 4) {
+        galileanMoons.forEach((moon, i) => {
+          if (i >= count) return;
+          const orbitRadius = planetRadius * moon.orbitScale;
+          const angle = time * moon.speed;
+          const moonX = centerX + orbitRadius * Math.cos(angle);
+          const moonY = centerY + orbitRadius * Math.sin(angle);
+          const moonRadius = planetRadius * 0.25;
+          
+          // 绘制轨道线
+          ctx.strokeStyle = moon.color + '40';
+          ctx.lineWidth = 0.5;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, orbitRadius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 绘制卫星
+          ctx.fillStyle = moon.color;
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      } else {
+        // 其他卫星简单地随机绘制
+        for (let i = 0; i < Math.min(count, 12); i++) {
+          const orbitRadius = planetRadius * (2 + i * 0.7);
+          const angle = time * (3 - i * 0.3) + (i * Math.PI / 3);
+          const moonX = centerX + orbitRadius * Math.cos(angle);
+          const moonY = centerY + orbitRadius * Math.sin(angle);
+          const moonRadius = planetRadius * 0.15;
+          
+          // 绘制轨道
+          ctx.strokeStyle = 'rgba(200,200,200,0.2)';
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, orbitRadius, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#ccc';
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // 绘制小行星带
+    function drawAsteroidBelt(centerX, centerY, innerRadius, outerRadius, count = 50) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = innerRadius + Math.random() * (outerRadius - innerRadius);
+        const x = centerX + distance * Math.cos(angle);
+        const y = centerY + distance * Math.sin(angle);
+        const size = Math.random() * 2 + 1;
+        
+        ctx.fillStyle = 'rgba(150, 150, 150, 0.6)';
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 绘制柯伊伯带
+    function drawKuiperBelt(centerX, centerY, radius, count = 30) {
+      ctx.fillStyle = 'rgba(100, 150, 200, 0.3)';
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = radius + Math.random() * 30 - 15;
+        const x = centerX + distance * Math.cos(angle);
+        const y = centerY + distance * Math.sin(angle);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, Math.random() * 2 + 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 绘制金星相位
+    function drawVenusPhases(x, y, radius, angle) {
+      ctx.fillStyle = '#daa520';
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 阴影
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath();
+      const phaseAngle = (Math.cos(angle) + 1) / 2 * Math.PI;
+      ctx.arc(x, y, radius, phaseAngle, phaseAngle + Math.PI);
+      ctx.fill();
+    }
+
+    // 主绘制函数
+    function draw() {
+      if (!currentModel) {
+        drawBackground();
+        return;
+      }
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const maxRadius = Math.min(centerX, centerY) - 20;
+      const scale = maxRadius / 280 * zoom;
+
+      drawBackground();
+
+      const planets = currentModel.planets;
+      
+      // 第一层：绘制轨道
+      planets.forEach(planet => {
+        if (planet.orbitCenter === 'Sun' || currentModel.isHeliocentric) {
+          drawOrbit(centerX, centerY, planet.distance * scale, 'rgba(255,255,255,0.15)', planet.eccentricity || 0);
+        }
+      });
+
+      // 绘制小行星带（现代模型）
+      if (currentModel.showAsteroidBelt) {
+        drawAsteroidBelt(centerX, centerY, 90 * scale, 110 * scale, 60);
+      }
+
+      // 绘制柯伊伯带（现代模型）
+      if (currentModel.showKuiperBelt) {
+        drawKuiperBelt(centerX, centerY, 260 * scale, 40);
+      }
+
+      // 第二层：绘制中心天体
+      let sunPos = { x: centerX, y: centerY };
+      let earthPos = { x: centerX, y: centerY };
+
+      if (currentModel.isHeliocentric || currentModel.id === 'aristarchus' || currentModel.id === 'copernicus') {
+        drawCenterBody(centerX, centerY, 15 * scale, '#ffd700', '太阳');
+      } else if (currentModel.id === 'tycho') {
+        // 第谷模型：地球在中心
+        drawCenterBody(centerX, centerY, 12 * scale, '#4169e1', '地球');
+        // 太阳围绕地球转
+        const sunAngle = time * currentModel.planets.find(p => p.name === '太阳').speed;
+        sunPos = calculatePosition(sunAngle, currentModel.planets.find(p => p.name === '太阳').distance * scale, centerX, centerY);
+        drawCenterBody(sunPos.x, sunPos.y, 12 * scale, '#ffd700', '太阳');
+      } else {
+        // 地心说：地球在中心
+        drawCenterBody(centerX, centerY, 12 * scale, '#4169e1', '地球');
+      }
+
+      // 第三层：绘制行星
+      planets.forEach((planet, index) => {
+        const planetRadius = index < 5 ? 6 * scale : 8 * scale;
+        let pos;
+        let parentCenter = { x: centerX, y: centerY };
+
+        if (planet.orbitCenter === 'Sun') {
+          parentCenter = currentModel.id === 'tycho' ? sunPos : { x: centerX, y: centerY };
+        }
+
+        if (planet.hasEpicycle) {
+          // 本轮-均轮运动
+          const mainAngle = time * planet.speed;
+          const epicycleAngle = time * planet.epicycleSpeed;
+          const mainX = parentCenter.x + planet.distance * scale * Math.cos(mainAngle);
+          const mainY = parentCenter.y + planet.distance * scale * Math.sin(mainAngle);
+          
+          // 绘制均轮（deferent）- 行星绕行的主圆轨道
+          drawDeferentRing(parentCenter.x, parentCenter.y, planet.distance * scale, planet.color);
+          
+          // 绘制本轮（epicycle）- 行星绕行的小圆
+          const epicycleRadius = planet.distance * 0.3 * scale;
+          drawEpicycle(mainX, mainY, epicycleRadius, planet.color);
+          
+          // 绘制从均轮中心到本轮中心的连线
+          ctx.strokeStyle = planet.color + '80';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(parentCenter.x, parentCenter.y);
+          ctx.lineTo(mainX, mainY);
+          ctx.stroke();
+          
+          // 行星在本轮(epicycle)上运动
+          pos = {
+            x: mainX + epicycleRadius * Math.cos(epicycleAngle),
+            y: mainY + epicycleRadius * Math.sin(epicycleAngle)
+          };
+          
+          // 绘制从本轮中心到行星的连线
+          ctx.strokeStyle = planet.color + '60';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(mainX, mainY);
+          ctx.lineTo(pos.x, pos.y);
+          ctx.stroke();
+        } else if (planet.orbitCenter === 'Sun' || currentModel.isHeliocentric) {
+          const angle = time * planet.speed;
+          pos = calculatePosition(angle, planet.distance * scale, centerX, centerY, planet.eccentricity || 0);
+        } else {
+          // 简单圆形运动
+          const angle = time * planet.speed;
+          pos = calculatePosition(angle, planet.distance * scale, centerX, centerY);
+        }
+
+        // 绘制行星
+        drawPlanet(pos.x, pos.y, planetRadius, planet.color, planet.name, planet.hasRings);
+
+        // 绘制卫星
+        if (planet.hasMoons) {
+          drawMoons(pos.x, pos.y, planetRadius, planet.color, planet.moonCount || 4, time);
+        }
+
+        // 绘制月球（地球）
+        if (planet.hasMoon) {
+          const moonOrbitRadius = planetRadius * 2.5;
+          const moonAngle = time * 3;
+          const moonX = pos.x + moonOrbitRadius * Math.cos(moonAngle);
+          const moonY = pos.y + moonOrbitRadius * Math.sin(moonAngle);
+          ctx.fillStyle = '#aaa';
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, planetRadius * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 金星相位
+        if (planet.hasPhases) {
+          drawVenusPhases(pos.x, pos.y, planetRadius, time * planet.speed);
+        }
+      });
+
+      // 绘制第谷模型的太阳轨道
+      if (currentModel.id === 'tycho') {
+        drawOrbit(centerX, centerY, 115 * scale, 'rgba(255,215,0,0.3)');
+      }
+
+      // 绘制额外球体（亚里士多德、托勒密）
+      if (currentModel.extraCircles) {
+        currentModel.extraCircles.forEach(circle => {
+          if (circle.type === 'sphere') {
+            ctx.strokeStyle = circle.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, circle.distance * scale, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        });
+      }
+    }
+
+    // 动画循环
+    function animate() {
+      if (isPlaying) {
+        time += 0.01 * speed;
+      }
+      draw();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // 更新模型列表
+    function updateModelList() {
+      const list = document.getElementById('modelList');
+      list.innerHTML = '';
+
+      models.forEach(model => {
+        const btn = document.createElement('div');
+        btn.className = 'model-btn' + (currentModel && currentModel.id === model.id ? ' active' : '');
+        btn.innerHTML = `
+          <span class="name">${model.name}</span>
+          <span class="year">${model.year}</span>
+          <span class="type type-${model.category}">${model.cosmosType}</span>
+        `;
+        btn.onclick = () => selectModel(model);
+        list.appendChild(btn);
+      });
+    }
+
+    // 选择模型
+    function selectModel(model) {
+      currentModel = model;
+      time = 0;
+      updateModelList();
+      
+      document.getElementById('modelTitle').textContent = `${model.name} (${model.year})`;
+      document.getElementById('modelDescription').innerHTML = model.description;
+      
+      // 更新图例
+      updateLegend(model);
+    }
+
+    // 更新图例
+    function updateLegend(model) {
+      const legend = document.getElementById('legend');
+      let html = '<div style="margin-bottom: 8px; font-weight: bold;">图例</div>';
+      
+      model.planets.forEach(planet => {
+        html += `
+          <div class="legend-item">
+            <div class="legend-color" style="background: ${planet.color}"></div>
+            <span>${planet.name}</span>
+          </div>
+        `;
+      });
+
+      if (model.isHeliocentric || model.id === 'aristarchus' || model.id === 'copernicus') {
+        html += `
+          <div class="legend-item">
+            <div class="legend-color" style="background: #ffd700"></div>
+            <span>太阳 ☀️</span>
+          </div>
+        `;
+      } else {
+        // 地心说模型：地球在中心
+        let centerBody = '地球';
+        if (model.id === 'tycho') {
+          centerBody = '地球 (中心)';
+        }
+        html += `
+          <div class="legend-item">
+            <div class="legend-color" style="background: #4169e1"></div>
+            <span>${centerBody} 🌏</span>
+          </div>
+        `;
+      }
+
+      legend.innerHTML = html;
+    }
+
+    // 控件事件
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+      speed = parseFloat(e.target.value);
+      document.getElementById('speedValue').textContent = speed + 'x';
+    });
+
+    document.getElementById('zoomSlider').addEventListener('input', (e) => {
+      zoom = parseFloat(e.target.value);
+      document.getElementById('zoomValue').textContent = zoom + 'x';
+    });
+
+    document.getElementById('playBtn').addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      document.getElementById('playBtn').textContent = isPlaying ? '⏸' : '▶';
+    });
+
+    // 展开/收起描述
+    const toggleDescBtn = document.getElementById('toggleDescBtn');
+    const descriptionContainer = document.getElementById('descriptionContainer');
+    
+    // 初始状态：展开
+    let isDescExpanded = true;
+    
+    toggleDescBtn.addEventListener('click', () => {
+      isDescExpanded = !isDescExpanded;
+      if (isDescExpanded) {
+        descriptionContainer.style.maxHeight = '400px';
+        descriptionContainer.style.opacity = '1';
+        descriptionContainer.style.padding = '10px 0';
+        toggleDescBtn.textContent = '▲ 收起';
+      } else {
+        descriptionContainer.style.maxHeight = '0';
+        descriptionContainer.style.opacity = '0';
+        descriptionContainer.style.padding = '0';
+        toggleDescBtn.textContent = '▼ 展开';
+      }
+    });
+
+    // 初始化
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    updateModelList();
+    selectModel(models[0]); // 默认选择第一个模型
+    animate();
+  </script>
+</body>
+</html>
