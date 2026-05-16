@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 肉桂防霉模拟实验 - 课堂教学演示</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d0 100%);
+    min-height: 100vh; color: #333;
+}
+.container { max-width: 1300px; margin:0 auto; padding:20px; }
+header {
+    text-align:center; padding:25px;
+    background: linear-gradient(135deg, #8B4513, #A0522D);
+    border-radius: 20px; margin-bottom:20px;
+    box-shadow: 0 4px 20px rgba(139,69,19,0.3);
+}
+header h1 { font-size:2em; color:#fff; }
+header h1 span { font-size:1.2em; }
+header .subtitle { color:#ffd699; margin-top:6px; font-size:1.05em; }
+.vars-board {
+    margin-bottom:20px; background:#fff; border-radius:16px;
+    padding:25px; box-shadow:0 2px 15px rgba(0,0,0,0.08);
+}
+.vars-board h2 { color:#8B4513; margin-bottom:15px; font-size:1.3em; text-align:center; }
+.var-row { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; }
+.var-item { padding:15px 22px; border-radius:12px; text-align:center; min-width:180px; flex:1; max-width:320px; }
+.var-item h3 { font-size:1em; margin-bottom:6px; }
+.var-item p { font-size:0.9em; line-height:1.6; }
+.var-iv { background:#e3f2fd; border:2px solid #1565c0; }
+.var-dv { background:#fce4ec; border:2px solid #c62828; }
+.var-cv { background:#e8f5e9; border:2px solid #2e7d32; }
+.var-iv h3 { color:#1565c0; }
+.var-dv h3 { color:#c62828; }
+.var-cv h3 { color:#2e7d32; }
+.main-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.bread-section { background:#fff; border-radius:16px; padding:20px; box-shadow:0 2px 15px rgba(0,0,0,0.08); }
+.bread-section h2 { text-align:center; color:#5D4037; margin-bottom:15px; font-size:1.2em; }
+.bread-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.bread-card {
+    background:#faf5ee; border-radius:12px; padding:12px;
+    text-align:center; border:2px solid transparent; transition:all 0.3s;
+}
+.bread-card:hover { border-color:#8B4513; }
+.bread-card .label {
+    font-weight:bold; font-size:0.9em; margin-bottom:4px;
+    padding:2px 10px; border-radius:4px; display:inline-block;
+}
+.bread-canvas-wrap { position:relative; width:100%; aspect-ratio:1.5/1; border-radius:10px; overflow:hidden; background:#f0e8d8; margin:0 auto; border:1px solid #ddd; }
+.bread-card canvas { display:block; width:100%; height:100%; }
+.bread-card .info { margin-top:6px; font-size:0.85em; color:#666; }
+.b0 .label { background:#efebe9; color:#5D4037; }
+.b1 .label { background:#fff3e0; color:#E65100; }
+.b3 .label { background:#ffe0b2; color:#BF360C; }
+.b5 .label { background:#ffcc80; color:#8D2200; }
+.chart-section { background:#fff; border-radius:16px; padding:20px; box-shadow:0 2px 15px rgba(0,0,0,0.08); }
+.chart-section h2 { text-align:center; color:#5D4037; margin-bottom:15px; font-size:1.2em; }
+.chart-wrap { background:#fafafa; border-radius:10px; padding:10px; border:1px solid #eee; }
+.chart-wrap canvas { display:block; width:100%; height:280px; }
+.controls { display:flex; align-items:center; justify-content:center; gap:15px; margin-top:18px; flex-wrap:wrap; }
+.btn {
+    padding:10px 24px; border:none; border-radius:30px;
+    font-size:1em; font-weight:bold; cursor:pointer;
+    transition:all 0.3s; font-family:inherit;
+}
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-primary { background:linear-gradient(135deg,#8B4513,#A0522D); color:#fff; box-shadow:0 3px 10px rgba(139,69,19,0.3); }
+.btn-primary:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 5px 15px rgba(139,69,19,0.4); }
+.btn-danger { background:linear-gradient(135deg,#c62828,#e53935); color:#fff; box-shadow:0 3px 10px rgba(198,40,40,0.3); }
+.btn-danger:hover:not(:disabled) { transform:translateY(-2px); }
+.ctrl-group { display:flex; align-items:center; gap:8px; }
+.ctrl-group label { font-size:0.9em; color:#666; }
+.ctrl-group input[type=range] { width:100px; accent-color:#8B4513; }
+.ctrl-group .val { font-weight:bold; color:#8B4513; min-width:30px; }
+.time-display { text-align:center; padding:8px; font-size:1.1em; color:#5D4037; background:rgba(139,69,19,0.08); border-radius:8px; margin-top:12px; }
+.time-display strong { font-size:1.3em; color:#8B4513; }
+.legend { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:10px; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:0.85em; color:#555; }
+.legend-dot { width:14px; height:14px; border-radius:4px; }
+.result-table { margin-top:15px; width:100%; border-collapse:collapse; font-size:0.9em; }
+.result-table th,.result-table td { padding:8px 12px; border:1px solid #ddd; text-align:center; }
+.result-table th { background:#8B4513; color:#fff; }
+.result-table td { background:#fff; }
+.principles { margin-top:20px; background:#fff; border-radius:16px; padding:25px; box-shadow:0 2px 15px rgba(0,0,0,0.08); }
+.principles h2 { color:#8B4513; margin-bottom:15px; font-size:1.3em; text-align:center; }
+.p-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+.p-card { background:#faf5ee; border-radius:12px; padding:18px; border-top:3px solid #8B4513; }
+.p-card h3 { color:#5D4037; margin-bottom:8px; font-size:1em; }
+.p-card p,.p-card ul { font-size:0.92em; line-height:1.7; color:#555; }
+.p-card ul { padding-left:18px; }
+.p-card li { margin-bottom:3px; }
+.hl { color:#8B4513; font-weight:bold; }
+.fade-in { animation:fadeIn 0.5s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@media (max-width:900px) {
+    .main-grid { grid-template-columns:1fr; }
+    .p-grid { grid-template-columns:1fr; }
+    .bread-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+    <h1><span>🧪</span> 肉桂防霉效果模拟实验</h1>
+    <div class="subtitle">Cinnamon Anti-Mold Effect — 课堂教学演示</div>
+</header>
+
+<div class="vars-board fade-in">
+    <h2>📋 实验设计</h2>
+    <div class="var-row">
+        <div class="var-item var-iv">
+            <h3>🔬 自变量</h3>
+            <p><strong>肉桂粉用量</strong><br>0g · 1g · 3g · 5g<br><span style="font-size:0.85em;color:#666;">(均匀撒在面包表面)</span></p>
+        </div>
+        <div class="var-item var-dv">
+            <h3>📊 因变量</h3>
+            <p><strong>霉菌生长面积占比</strong><br>培养天数 → 菌落覆盖<br>面包表面的百分比 (%)</p>
+        </div>
+        <div class="var-item var-cv">
+            <h3>⚖️ 控制变量</h3>
+            <p>面包种类 · 温度 25°C<br>湿度 80%RH · 光照<br>培养时间 · 观察方式</p>
+        </div>
+    </div>
+</div>
+
+<div class="main-grid fade-in">
+    <div class="bread-section">
+        <h2>🍞 面包培养实验 (14天)</h2>
+        <div class="bread-grid" id="breadGrid"></div>
+        <div class="time-display" id="timeDisplay">
+            培养时间: 第 <strong id="dayDisplay">0</strong> 天
+            <span style="margin-left:15px;font-size:0.85em;color:#999;">(点击「开始实验」启动)</span>
+        </div>
+        <div class="controls">
+            <div class="ctrl-group">
+                <button class="btn btn-primary" id="btnStart" onclick="startExp()">▶ 开始实验</button>
+                <button class="btn btn-danger" id="btnReset" onclick="resetExp()">↺ 重置</button>
+            </div>
+            <div class="ctrl-group">
+                <label>速度:</label>
+                <input type="range" id="spdSlider" min="1" max="5" value="3" oninput="updateSpd()">
+                <span class="val" id="spdDisplay">3×</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-section">
+        <h2>📈 实验结果 — 霉菌覆盖率变化曲线</h2>
+        <div class="chart-wrap"><canvas id="chartCanvas"></canvas></div>
+        <div class="legend" id="chartLegend"></div>
+        <table class="result-table" id="resultTable">
+            <thead><tr><th>肉桂用量</th><th>第3天</th><th>第7天</th><th>第10天</th><th>第14天</th><th>结论</th></tr></thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="principles fade-in">
+    <h2>🧫 实验原理</h2>
+    <div class="p-grid">
+        <div class="p-card">
+            <h3>🌿 肉桂的抗菌成分</h3>
+            <p>肉桂含有 <span class="hl">肉桂醛 (C₉H₈O)</span> 和 <span class="hl">丁香酚 (C₁₀H₁₂O₂)</span> 等挥发性芳香化合物。这些物质能够：</p>
+            <ul>
+                <li>破坏霉菌细胞的<span class="hl">细胞膜结构</span>，增加膜通透性</li>
+                <li>抑制<span class="hl">线粒体呼吸作用</span>，阻断能量代谢</li>
+                <li>干扰<span class="hl">DNA/RNA 合成</span>，阻碍菌丝生长</li>
+                <li>降低<span class="hl">孢子萌发率</span>，从源头抑制繁殖</li>
+            </ul>
+        </div>
+        <div class="p-card">
+            <h3>🧬 霉菌生长条件</h3>
+            <p>霉菌（<em>Aspergillus</em> 曲霉、<em>Penicillium</em> 青霉）生长依赖：</p>
+            <ul>
+                <li><strong>温度</strong>：最适 20~30°C（本实验 25°C）</li>
+                <li><strong>湿度</strong>：相对湿度 >70%（本实验 80%RH）</li>
+                <li><strong>营养</strong>：面包提供淀粉、蛋白质等</li>
+                <li><strong>时间</strong>：肉眼可见菌落约 3~7 天</li>
+            </ul>
+            <p style="margin-top:8px;font-size:0.88em;color:#666;">肉桂抗菌成分在 25°C / 80%RH 下持续挥发，形成抑菌环境。</p>
+        </div>
+        <div class="p-card">
+            <h3>📐 实验逻辑与假设</h3>
+            <p><strong>假设：</strong>肉桂用量越大 → 霉菌生长越慢 → 面包保存越久</p>
+            <p><strong>预期结果：</strong></p>
+            <ul>
+                <li><span class="hl">0g</span>：3~5天出现霉斑，14天完全覆盖</li>
+                <li><span class="hl">1g</span>：5~7天出现，速度减缓约 30%</li>
+                <li><span class="hl">3g</span>：7~10天出现，速度减缓约 60%</li>
+                <li><span class="hl">5g</span>：10~14天少量霉斑，抑菌率 &gt;85%</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<p style="text-align:center;margin-top:20px;color:#999;font-size:0.85em;">教学演示模拟 · 肉桂防霉实验 · 基于真实生物学原理</p>
+</div>
+
+<script>
+// ============ 实验配置 ============
+const TOTAL_DAYS = 14;
+const GROUPS = [
+    { id:'b0',  label:'对照组 0g',  cinnamon:0,  lineColor:'#8D6E63', bg:'#efebe9' },
+    { id:'b1',  label:'肉桂 1g',    cinnamon:1,  lineColor:'#E65100', bg:'#fff3e0' },
+    { id:'b3',  label:'肉桂 3g',    cinnamon:3,  lineColor:'#BF360C', bg:'#ffe0b2' },
+    { id:'b5',  label:'肉桂 5g',    cinnamon:5,  lineColor:'#8D2200', bg:'#ffcc80' }
+];
+
+// 霉菌生长模型: 逻辑斯蒂增长 + 肉桂抑制
+function calcMold(cinnamon, day) {
+    if (day <= 0) return 0;
+    const inh = Math.min(1, cinnamon * 0.12 + 0.02);
+    const maxCov = 92 * (1 - inh * 0.85);
+    const lag = 2 + cinnamon * 1.5;
+    const rate = 0.5 - cinnamon * 0.07;
+    const eff = Math.max(0, day - lag);
+    const logistic = maxCov / (1 + Math.exp(-rate * eff * 2 + 3));
+    const noise = (Math.random() - 0.5) * 2;
+    return Math.max(0, Math.min(maxCov, logistic + noise));
+}
+
+let data = {};
+let curDay = 0;
+let running = false;
+let timer = null;
+let spd = 3;
+
+function init() {
+    document.getElementById('breadGrid').innerHTML = GROUPS.map(g =>
+        `<div class="bread-card ${g.id}">
+            <div class="label">${g.label}</div>
+            <div class="bread-canvas-wrap">
+                <canvas id="cv-${g.id}"></canvas>
+            </div>
+            <div class="info">霉菌覆盖: <strong id="mold-${g.id}">0.0%</strong></div>
+        </div>`
+    ).join('');
+
+    GROUPS.forEach(g => {
+        const c = document.getElementById('cv-' + g.id);
+        const p = c.parentElement;
+        c.width = p.offsetWidth || 220;
+        c.height = p.offsetHeight || 150;
+    });
+
+    resetData();
+    redrawAll();
+    drawChart();
+    updateTable();
+
+    document.getElementById('chartLegend').innerHTML = GROUPS.map(g =>
+        `<div class="legend-item"><span class="legend-dot" style="background:${g.lineColor}"></span>${g.label}</div>`
+    ).join('');
+
+    window.addEventListener('resize', () => { redrawAll(); drawChart(); });
+}
+
+function resetData() {
+    data = {}; curDay = 0;
+    GROUPS.forEach(g => { data[g.id] = []; });
+}
+
+function getCov(id, day) {
+    const arr = data[id];
+    if (!arr) return 0;
+    let f = arr.find(d => d.day === day);
+    if (f) return f.cov;
+    const g = GROUPS.find(x => x.id === id);
+    const c = calcMold(g.cinnamon, day);
+    arr.push({ day, cov: Math.round(c*10)/10 });
+    return c;
+}
+
+// ============ 绘制面包 ============
+function drawBread(g, day) {
+    const canvas = document.getElementById('cv-' + g.id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+
+    ctx.clearRect(0,0,w,h);
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0,'#f5e6c8'); grad.addColorStop(0.4,'#e8d5a8');
+    grad.addColorStop(0.6,'#dcc49a'); grad.addColorStop(1,'#c4a882');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.roundRect(10,5,w-20,h-15,12); ctx.fill();
+
+    // 毛孔
+    ctx.fillStyle = 'rgba(180,140,100,0.15)';
+    for (let i=0;i<30;i++) {
+        ctx.beginPath(); ctx.arc(15+Math.random()*(w-30),10+Math.random()*(h-20),1+Math.random()*3,0,Math.PI*2); ctx.fill();
+    }
+
+    // 肉桂
+    if (g.cinnamon > 0) {
+        let cnt = 20 + g.cinnamon * 40;
+        for (let i=0;i<cnt;i++) {
+            ctx.fillStyle = `rgba(139,69,19,${0.3+Math.random()*0.5})`;
+            ctx.beginPath(); ctx.arc(15+Math.random()*(w-30),8+Math.random()*(h-18),1+Math.random()*(1.5+g.cinnamon*0.3),0,Math.PI*2); ctx.fill();
+        }
+    }
+
+    // 霉菌
+    const cov = getCov(g.id, day);
+    if (cov > 0 && day > 0) {
+        let r = Math.min(cov/100, 1);
+        let cnt = Math.floor(cov * 3);
+        for (let i=0;i<cnt;i++) {
+            let px = 12+Math.random()*(w-24), py = 8+Math.random()*(h-18), sz = 3+Math.random()*8*(0.5+r*0.5);
+            let hue = 120 + r*60 + Math.random()*30, sat = 30 + r*40, light = Math.max(10, 50 - r*30);
+            ctx.fillStyle = `hsla(${hue},${sat}%,${light}%,${0.5+r*0.4})`;
+            ctx.beginPath(); ctx.arc(px,py,sz,0,Math.PI*2); ctx.fill();
+            for (let j=0;j<4;j++) {
+                let ang = Math.random()*Math.PI*2, dist = sz*(0.6+Math.random()*0.8);
+                ctx.fillStyle = `hsla(${hue+10},${sat}%,${light+10}%,${0.2+r*0.3})`;
+                ctx.beginPath(); ctx.arc(px+Math.cos(ang)*dist,py+Math.sin(ang)*dist,sz*0.4,0,Math.PI*2); ctx.fill();
+            }
+        }
+        if (cov > 5) {
+            ctx.fillStyle = `rgba(100,120,80,${Math.min(0.5,cov/200)})`;
+            ctx.beginPath(); ctx.roundRect(12,8,w-24,h-18,10); ctx.fill();
+        }
+    }
+
+    ctx.strokeStyle = 'rgba(139,69,19,0.15)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(10,5,w-20,h-15,12); ctx.stroke();
+    document.getElementById('mold-'+g.id).textContent = cov.toFixed(1)+'%';
+}
+
+function redrawAll() { GROUPS.forEach(g => drawBread(g, curDay)); }
+
+// ============ 图表 ============
+function drawChart() {
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    const W = document.getElementById('chartCanvas').parentElement.offsetWidth || 500;
+    document.getElementById('chartCanvas').width = W;
+    document.getElementById('chartCanvas').height = 280;
+    const H = 280, pad={top:20,right:20,bottom:45,left:45}, cw=W-pad.left-pad.right, ch=H-pad.top-pad.bottom;
+    ctx.clearRect(0,0,W,H); ctx.fillStyle='#fafafa'; ctx.fillRect(0,0,W,H);
+    if (cw<10||ch<10) return;
+
+    for (let i=0;i<=10;i++) {
+        let y=pad.top+ch*(1-i/10);
+        ctx.strokeStyle='#eee'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+cw,y); ctx.stroke();
+        ctx.fillStyle='#999'; ctx.font='11px Arial'; ctx.textAlign='right'; ctx.fillText((i*10)+'%',pad.left-6,y+4);
+    }
+    for (let i=0;i<=TOTAL_DAYS;i+=2) {
+        let x=pad.left+cw*(i/TOTAL_DAYS);
+        ctx.strokeStyle='#eee'; ctx.beginPath(); ctx.moveTo(x,pad.top); ctx.lineTo(x,pad.top+ch); ctx.stroke();
+        ctx.fillStyle='#999'; ctx.font='11px Arial'; ctx.textAlign='center'; ctx.fillText('第'+i+'天',x,pad.top+ch+18);
+    }
+    ctx.fillStyle='#666'; ctx.font='12px Arial'; ctx.textAlign='center'; ctx.fillText('培养天数',pad.left+cw/2,H-5);
+    ctx.save(); ctx.translate(12,pad.top+ch/2); ctx.rotate(-Math.PI/2); ctx.fillText('霉菌覆盖率 (%)',0,0); ctx.restore();
+
+    let maxV=5;
+    GROUPS.forEach(g => (data[g.id]||[]).forEach(p => {if(p.cov>maxV)maxV=p.cov;}));
+    let chartMax = Math.max(100, Math.ceil(maxV/10)*10+10);
+
+    GROUPS.forEach(g => {
+        let pts = (data[g.id]||[]).sort((a,b)=>a.day-b.day);
+        if (pts.length<2) return;
+        ctx.strokeStyle=g.lineColor; ctx.lineWidth=2.5; ctx.beginPath();
+        pts.forEach((p,i)=>{
+            let x=pad.left+cw*(p.day/TOTAL_DAYS), y=pad.top+ch*(1-p.cov/chartMax);
+            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }); ctx.stroke();
+        let last=pts[pts.length-1];
+        let lx=pad.left+cw*(last.day/TOTAL_DAYS), ly=pad.top+ch*(1-last.cov/chartMax);
+        ctx.fillStyle=g.lineColor; ctx.beginPath(); ctx.arc(lx,ly,4,0,Math.PI*2); ctx.fill();
+    });
+
+    if (curDay>0 && curDay<=TOTAL_DAYS) {
+        let dx=pad.left+cw*(curDay/TOTAL_DAYS);
+        ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+        ctx.beginPath(); ctx.moveTo(dx,pad.top); ctx.lineTo(dx,pad.top+ch); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle='#333'; ctx.font='bold 12px Arial'; ctx.textAlign='center'; ctx.fillText('← 当前',dx,pad.top-5);
+    }
+    ctx.fillStyle='#555'; ctx.font='12px Arial'; ctx.textAlign='center'; ctx.fillText('肉桂用量与霉菌覆盖率关系',pad.left+cw/2,14);
+}
+
+// ============ 结果表 ============
+function updateTable() {
+    const days=[3,7,10,14];
+    document.getElementById('resultBody').innerHTML = GROUPS.map(g=>{
+        let vals=days.map(d=>getCov(g.id,d).toFixed(1)+'%');
+        let f=getCov(g.id,14);
+        let c = g.cinnamon===0?'❌ 严重霉变(对照)':f<10?'✅ 抑菌效果极佳':f<30?'✓ 抑菌效果显著':f<60?'◐ 有一定效果':'✗ 效果不明显';
+        return `<tr><td><strong style="color:${g.lineColor}">${g.label}</strong></td>${vals.map(v=>'<td>'+v+'</td>').join('')}<td style="font-size:0.85em">${c}</td></tr>`;
+    }).join('');
+}
+
+// ============ 控制 ============
+function startExp() {
+    if (running) return;
+    if (curDay >= TOTAL_DAYS) { resetExp(); return; }
+    running = true;
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnStart').textContent = '⏳ 运行中...';
+    document.getElementById('btnReset').disabled = true;
+    tick();
+}
+
+function tick() {
+    if (!running) return;
+    curDay++;
+    if (curDay > TOTAL_DAYS) {
+        running = false;
+        document.getElementById('btnStart').textContent = '▶ 重新实验';
+        document.getElementById('btnStart').disabled = false;
+        document.getElementById('btnReset').disabled = false;
+        document.getElementById('dayDisplay').textContent = TOTAL_DAYS;
+        redrawAll(); drawChart(); updateTable(); return;
+    }
+    GROUPS.forEach(g => getCov(g.id, curDay));
+    document.getElementById('dayDisplay').textContent = curDay;
+    redrawAll(); drawChart(); updateTable();
+    timer = setTimeout(tick, Math.max(200, 1200 - spd * 200));
+}
+
+function resetExp() {
+    running = false; if (timer) clearTimeout(timer); timer = null;
+    curDay = 0; resetData();
+    document.getElementById('btnStart').textContent = '▶ 开始实验';
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnReset').disabled = false;
+    document.getElementById('dayDisplay').textContent = '0';
+    redrawAll(); drawChart(); updateTable();
+}
+
+function updateSpd() { spd = parseInt(document.getElementById('spdSlider').value); document.getElementById('spdDisplay').textContent = spd+'×'; }
+
+// roundRect polyfill
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+        if(typeof r==='number')r=[r]; r=r[0]||0;
+        this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r);
+        this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+        this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r);
+        this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this;
+    };
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
